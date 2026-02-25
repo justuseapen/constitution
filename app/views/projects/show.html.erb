@@ -1,0 +1,10 @@
+<div class="max-w-4xl mx-auto py-8">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold"><%= @project.name %></h1>
+    <div class="space-x-2">
+      <%= link_to "Edit", edit_project_path(@project), class: "px-3 py-1 border rounded hover:bg-gray-50" %>
+      <%= link_to "Back", projects_path, class: "px-3 py-1 border rounded hover:bg-gray-50" %>
+    </div>
+  </div>
+  <p class="text-gray-600"><%= @project.description %></p>
+</div>
