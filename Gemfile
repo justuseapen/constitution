@@ -60,3 +60,37 @@ group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
 end
+
+# Neo4j
+# Note: activegraph 11.5 is only available as beta, using 11.4 stable
+gem "activegraph", "~> 11.4"
+gem "neo4j-ruby-driver", "~> 4.4"
+
+# Authentication
+gem "devise", "~> 4.9"
+
+# AI
+gem "ruby-openai", "~> 7.0"  # OpenRouter is OpenAI-compatible
+
+# Search
+gem "neighbor", "~> 0.4"  # pgvector integration
+
+# Authorization
+gem "pundit", "~> 2.3"
+
+# Serialization
+gem "oj", "~> 3.16"
+
+# Testing
+group :development, :test do
+  gem "rspec-rails", "~> 7.0"
+  gem "factory_bot_rails", "~> 6.4"
+  gem "faker", "~> 3.4"
+  gem "shoulda-matchers", "~> 6.2"
+end
+
+group :test do
+  gem "database_cleaner-active_record", "~> 2.1"
+  gem "webmock", "~> 3.23"
+  gem "vcr", "~> 6.2"
+end
