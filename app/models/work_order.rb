@@ -1,0 +1,23 @@
+class WorkOrder < ApplicationRecord
+  belongs_to :project
+  belongs_to :phase, optional: true
+  belongs_to :assignee, class_name: "User", optional: true
+  has_many :comments, as: :commentable, dependent: :destroy
+
+  validates :title, presence: true
+
+  enum :status, {
+    backlog: 0,
+    todo: 1,
+    in_progress: 2,
+    review: 3,
+    done: 4
+  }, default: :backlog
+
+  enum :priority, {
+    low: 0,
+    medium: 1,
+    high: 2,
+    critical: 3
+  }, default: :medium
+end
