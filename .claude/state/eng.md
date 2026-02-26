@@ -1,7 +1,7 @@
 # Engineering State - Constitution
 
 ## Last Updated
-2026-02-26T14:36:00Z
+2026-02-26T16:05:00Z
 
 ## Current Sprint Goal
 Initialize Rails 8 application with Docker Compose infrastructure (Postgres, Neo4j, Redis) and core gems
@@ -17,6 +17,8 @@ Initialize Rails 8 application with Docker Compose infrastructure (Postgres, Neo
 | Polymorphic Comment Model | Complete | master | Comment model for Documents, Blueprints, WorkOrders |
 | Documents Controller & Views with Tiptap | Complete | master | Full CRUD with rich text editor integration |
 | Auto-Generate Placeholder Docs | Complete | master | Project creation now seeds Product Overview & Technical Requirements docs |
+| Blueprint & BlueprintVersion Models | Complete | master | Blueprint system with Mermaid diagram support |
+| Phase & WorkOrder Models | Complete | master | Planner data layer with phases and work orders |
 
 ## Blockers
 - [ ] _None yet_
@@ -40,28 +42,34 @@ Initialize Rails 8 application with Docker Compose infrastructure (Postgres, Neo
 - ruby-openai for OpenRouter integration (OpenAI-compatible API)
 
 ## Context for Next Session
-Task 8 complete: Auto-Generate Placeholder Docs on Project Creation implemented.
+Task 10 complete: Phase and WorkOrder models implemented.
 
-Key files modified:
-- `app/models/project.rb` - Added `self.seed_documents(project, user)` class method that creates two placeholder documents
-- `app/controllers/projects_controller.rb` - Added `Project.seed_documents(@project, current_user)` call after successful project save
-- `spec/models/project_spec.rb` - Added comprehensive specs for the seed_documents method
+Key files created:
+- **Models:** `app/models/phase.rb`, `app/models/work_order.rb`
+- **Migrations:** `db/migrate/20260226160000_create_phases.rb`, `db/migrate/20260226160001_create_work_orders.rb`
+- **Specs:** `spec/models/phase_spec.rb`, `spec/models/work_order_spec.rb`
+- **Factories:** `spec/factories/phases.rb`, `spec/factories/work_orders.rb`
 
-Commit: 43d44cb "feat: auto-generate placeholder docs on project creation"
+Commit: 9a67471 "feat: add Phase and WorkOrder models"
 
 Features implemented:
-- When a new project is created, two placeholder documents are auto-generated:
-  1. **Product Overview** (document_type: product_overview) with sections: Business Problem, Target Users, Success Criteria
-  2. **Technical Requirements** (document_type: technical_requirement) with sections: Authentication & Authorization, Performance, Security
-- Documents are created with proper HTML structure using `<h2>` headers and empty `<p>` tags for content
-- Both documents are attributed to the creating user via `created_by` association
-- Full test coverage for the seed_documents method including document count, titles, content, and associations
+- **Phase model** - Organizes work orders into sequential phases with position ordering
+- **WorkOrder model** - Traceable task units with status, priority, acceptance criteria, and implementation plans
+- **Associations** - Phase has_many work_orders (nullify on delete), WorkOrder belongs_to phase (optional), project, assignee (User)
+- **Polymorphic comments** - WorkOrder is commentable via existing Comment model
+- **Status enum** - backlog (0), todo (1), in_progress (2), review (3), done (4)
+- **Priority enum** - low (0), medium (1), high (2), critical (3)
+- **Position fields** - Both Phase and WorkOrder have position for drag-and-drop ordering
+- **AI-ready fields** - acceptance_criteria, implementation_plan for AI-generated content
+- **Full test coverage** - Model specs with shoulda-matchers, factories with Faker data
 
-Implementation notes:
-- Used class method `Project.seed_documents(project, user)` for better testability and separation of concerns
-- HTML ampersand properly escaped as `&amp;` in "Authentication & Authorization" section
-- Specs verify both documents are created with correct type, title, body content, and user attribution
+Implementation details:
+- Phase has default_scope ordering by position
+- WorkOrder assignee_id references users table with optional FK
+- Indexes on work_orders: assignee_id, status, priority for query optimization
+- Phase deletion nullifies work_orders (they can exist without a phase)
+- Both models validate presence of key fields (name for Phase, title for WorkOrder)
 
-Note: Database is NOT running, so migrations have not been applied yet. Specs cannot run until database is running and migrations are applied.
+Note: Database is NOT running locally, so migrations have not been applied yet. Specs cannot run until database is running and migrations are applied.
 
-Ready for next task: Blueprint, Phase, WorkOrder, and FeedbackItem models.
+Ready for next task: WorkOrders controller and Kanban UI.
