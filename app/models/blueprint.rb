@@ -7,6 +7,7 @@ class Blueprint < ApplicationRecord
   belongs_to :updated_by, class_name: "User", optional: true
   has_many :versions, class_name: "BlueprintVersion", dependent: :destroy
   has_many :comments, as: :commentable, dependent: :destroy
+  has_many :agent_conversations, as: :conversable, dependent: :destroy
 
   validates :title, presence: true
 

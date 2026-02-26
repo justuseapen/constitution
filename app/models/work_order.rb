@@ -5,6 +5,7 @@ class WorkOrder < ApplicationRecord
   belongs_to :phase, optional: true
   belongs_to :assignee, class_name: "User", optional: true
   has_many :comments, as: :commentable, dependent: :destroy
+  has_many :agent_conversations, as: :conversable, dependent: :destroy
 
   validates :title, presence: true
 
