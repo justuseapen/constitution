@@ -1,7 +1,7 @@
 # Engineering State - Constitution
 
 ## Last Updated
-2026-02-26T19:15:00Z
+2026-02-26T20:30:00Z
 
 ## Current Sprint Goal
 Initialize Rails 8 application with Docker Compose infrastructure (Postgres, Neo4j, Redis) and core gems
@@ -27,6 +27,9 @@ Initialize Rails 8 application with Docker Compose infrastructure (Postgres, Neo
 | ServiceSystem & SystemDependency Models | Complete | master | System Registry data layer with microservice architecture mapping |
 | System Map Visualization with D3.js | Complete | master | Interactive force-directed graph showing services and dependencies |
 | FeedbackItem Model & API Endpoint | Complete | master | Validator API with auto-triage job using AI |
+| Validator Inbox UI | Complete | master | Feedback inbox with filtering and work order creation |
+| Action Cable Channels & Presence | Complete | master | Real-time channels with presence tracking |
+| Notification Center UI | Complete | master | Bell icon dropdown with real-time notification updates |
 
 ## Blockers
 - [ ] _None yet_
@@ -376,4 +379,141 @@ Technical decisions:
 - Active flag on app keys allows soft disabling without deletion
 - Submitted_by_email enables user follow-up without full user accounts
 
-Ready for next task: Validator API complete. Can now collect feedback from external apps, auto-categorize with AI, and manage triage lifecycle.
+## Context for Next Session
+Tasks 19, 20, and 21 complete: Validator Inbox UI, Action Cable Channels & Presence, and Notification Center UI.
+
+### Task 19: Validator Inbox UI
+Key files created/modified:
+- **Controller:** `app/controllers/feedback_items_controller.rb` - Full CRUD for feedback with work order creation
+- **Views:**
+  - `app/views/feedback_items/index.html.erb` - Inbox table with category filters
+  - `app/views/feedback_items/show.html.erb` - Feedback detail with "Create Work Order" button
+- **Routes:** Added `resources :feedback_items` under projects with `create_work_order` member action
+- **Spec:** `spec/requests/feedback_items_spec.rb` - Request spec for inbox and work order creation
+
+Commits:
+- 3a8a64b "feat: add Validator inbox with filtering and work order creation"
+
+Features implemented:
+- **FeedbackItemsController:**
+  - index: Filter by category/status, ordered by created_at desc
+  - show: Display feedback details with technical context JSON
+  - update: Update category/status via strong params
+  - create_work_order: Creates WorkOrder from feedback, creates GraphSync edge, updates status to in_progress
+  - Team-scoped via current_user.team.projects
+
+- **Inbox View:**
+  - Category filter tabs (All, Uncategorized, Bug, Feature Request, Performance)
+  - Table showing title, category badge, score, status badge, created date
+  - Clicking title navigates to show page
+
+- **Show View:**
+  - Displays title, category/status/score badges
+  - "Create Work Order" button (POST to create_work_order action)
+  - Body rendered with simple_format
+  - Technical context displayed as pretty-printed JSON if present
+  - Back to inbox link
+
+### Task 20: Action Cable Channels & Presence
+Key files created/modified:
+- **Channels:**
+  - `app/channels/project_channel.rb` - Project-wide broadcasts
+  - `app/channels/document_channel.rb` - Document collaboration with presence tracking
+  - `app/channels/notification_channel.rb` - User-specific notifications
+- **Stimulus:** `app/javascript/controllers/presence_controller.js` - Presence tracking UI
+- **Migration:** `db/migrate/20260226200000_create_notifications.rb` - Notifications table
+- **Model:** `app/models/notification.rb` - Notification with auto-broadcast
+- **User Model:** Added `has_many :notifications` association
+- **Manifest:** Registered presence controller in `app/javascript/controllers/index.js`
+
+Commits:
+- 6763594 "feat: add real-time channels for collaboration and presence tracking"
+
+Features implemented:
+- **ProjectChannel:**
+  - Subscribes to "project_{id}" stream for project-wide broadcasts
+
+- **DocumentChannel:**
+  - Subscribes to "document_{id}" stream
+  - Broadcasts presence events on subscribed/unsubscribed
+  - Presence payload: `{ type: "presence", action: "joined|left", user: { id, name } }`
+
+- **NotificationChannel:**
+  - Subscribes to "notifications_{user_id}" stream for user-specific notifications
+
+- **Presence Stimulus Controller:**
+  - Tracks active users via Map (user_id → name)
+  - Renders green badges for active users
+  - Auto-connects on mount, unsubscribes on disconnect
+  - Updates UI on joined/left events
+
+- **Notification Model:**
+  - Belongs to user and polymorphic notifiable
+  - Message required, read boolean (default false)
+  - Scopes: unread, recent (20 most recent)
+  - after_create_commit broadcasts to "notifications_{user_id}" channel
+  - Broadcast payload: `{ type: "notification", id, message, created_at }`
+
+- **Migration:**
+  - Polymorphic notifiable (notifiable_type, notifiable_id)
+  - Indexes on [notifiable_type, notifiable_id] and [user_id, read]
+  - Message required, read defaults to false
+
+### Task 21: Notification Center UI
+Key files created/modified:
+- **Controller:** `app/controllers/notifications_controller.rb` - Notifications API
+- **Partial:** `app/views/shared/_notification_bell.html.erb` - Bell icon with dropdown
+- **Stimulus:** `app/javascript/controllers/notifications_controller.js` - Real-time notification updates
+- **Routes:** Added `resources :notifications` with mark_read, unread_count collection actions
+- **Spec:** `spec/requests/notifications_spec.rb` - Request spec for notifications API
+- **Factory:** `spec/factories/notifications.rb` - FactoryBot factory
+- **Manifest:** Registered notifications controller in `app/javascript/controllers/index.js`
+
+Commits:
+- 62b87cd "feat: add notification center with real-time updates"
+
+Features implemented:
+- **NotificationsController:**
+  - index: Returns recent notifications (HTML or JSON via respond_to)
+  - mark_read: Bulk update notifications to read=true via params[:ids]
+  - unread_count: Returns JSON `{ count: N }` for unread notifications
+
+- **Notification Bell Partial:**
+  - Bell icon with SVG
+  - Badge shows unread count (hidden when 0)
+  - Dropdown with notifications list (hidden by default)
+  - Stimulus controller data attributes for URL values
+
+- **Notifications Stimulus Controller:**
+  - Subscribes to NotificationChannel on connect
+  - Fetches notifications via JSON API on toggle
+  - Updates badge count and hides/shows based on unread count
+  - Renders notifications list with read/unread styling (bg-blue-50 for unread)
+  - addNotification increments badge on new real-time notification
+  - Unsubscribes and disconnects on controller disconnect
+
+- **Routes:**
+  - GET /notifications (HTML and JSON)
+  - POST /notifications/mark_read (bulk update)
+  - GET /notifications/unread_count (JSON count)
+
+Implementation notes:
+- All Ruby syntax validated with ruby -c
+- Database not running - specs created but not executed
+- Action Cable requires Redis (already configured in Docker Compose)
+- All controllers registered in Stimulus manifest
+- GraphService.create_edge stubbed in specs for FeedbackItems work order creation
+- Notification bell partial ready to be included in layout (not yet integrated)
+
+Technical decisions:
+- Action Cable for WebSocket-based real-time updates
+- Presence tracking uses Map for efficient add/remove operations
+- Notification model broadcasts automatically on create (no manual trigger needed)
+- Unread count badge auto-hides when 0 for clean UI
+- Dropdown lazy-loads notifications on toggle (not on initial page load)
+- Recent scope limits to 20 notifications to prevent UI overload
+- Polymorphic notifiable allows notifications for any model (Document, WorkOrder, etc)
+- Mark read supports bulk updates for "mark all as read" functionality
+- Real-time notification increments badge but doesn't auto-open dropdown (user controls visibility)
+
+Ready for next task: Real-time collaboration infrastructure complete. Ready to integrate notification bell into layout, or proceed with next feature.
