@@ -6,6 +6,7 @@ class Project < ApplicationRecord
   has_many :work_orders, dependent: :destroy
   has_many :feedback_items, dependent: :destroy
   has_many :drift_alerts, dependent: :destroy
+  has_many :app_keys, dependent: :destroy
 
   validates :name, presence: true
 
