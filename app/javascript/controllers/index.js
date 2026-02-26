@@ -18,3 +18,6 @@ application.register("kanban", KanbanController)
 
 import AgentChatController from "./agent_chat_controller"
 application.register("agent-chat", AgentChatController)
+
+import SystemMapController from "./system_map_controller"
+application.register("system-map", SystemMapController)

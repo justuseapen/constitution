@@ -1,0 +1,24 @@
+<div class="p-6">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold">System Map</h1>
+    <%= link_to "Add System", new_system_path, class: "px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700" %>
+  </div>
+
+  <div class="bg-white rounded-lg shadow p-4 mb-6"
+       data-controller="system-map"
+       data-system-map-url-value="<%= systems_path(format: :json) %>">
+    <div data-system-map-target="graph" class="w-full" style="min-height: 500px;"></div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <% @systems.each do |system| %>
+      <div class="bg-white rounded-lg shadow p-4 border-l-4" style="border-color: <%= system_color(system.system_type) %>;">
+        <%= link_to system_path(system), class: "block" do %>
+          <h3 class="font-semibold"><%= system.name %></h3>
+          <p class="text-sm text-gray-500 capitalize"><%= system.system_type.humanize %></p>
+          <p class="text-sm text-gray-600 mt-1"><%= truncate(system.description, length: 80) %></p>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>
