@@ -1,0 +1,23 @@
+<div class="max-w-4xl mx-auto py-8">
+  <div class="flex justify-between items-center mb-6">
+    <div>
+      <h1 class="text-2xl font-bold">Documents</h1>
+      <p class="text-gray-500 text-sm"><%= @project.name %></p>
+    </div>
+    <%= link_to "New Document", new_project_document_path(@project), class: "px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700" %>
+  </div>
+
+  <div class="space-y-3">
+    <% @documents.each do |document| %>
+      <%= link_to project_document_path(@project, document), class: "block p-4 border rounded hover:bg-gray-50" do %>
+        <div class="flex justify-between items-start">
+          <div>
+            <h2 class="font-semibold"><%= document.title %></h2>
+            <span class="text-xs px-2 py-0.5 rounded bg-gray-200 text-gray-600"><%= document.document_type.humanize %></span>
+          </div>
+          <span class="text-xs text-gray-400">v<%= document.version %></span>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+</div>
