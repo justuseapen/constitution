@@ -1,0 +1,33 @@
+<div class="w-80 border-l bg-gray-50 flex flex-col h-full"
+     data-controller="agent-chat"
+     data-agent-chat-conversable-type-value="<%= conversable_type %>"
+     data-agent-chat-conversable-id-value="<%= conversable_id %>"
+     data-agent-chat-url-value="<%= agent_chats_path(conversable_type: conversable_type, conversable_id: conversable_id) %>">
+
+  <div class="p-3 border-b bg-white">
+    <h3 class="font-semibold text-sm">AI Agent</h3>
+    <p class="text-xs text-gray-500">Ask questions about this artifact</p>
+  </div>
+
+  <div data-agent-chat-target="messages" class="flex-1 overflow-y-auto p-3 space-y-2">
+    <!-- Messages appear here -->
+  </div>
+
+  <div data-agent-chat-target="response" class="p-3 text-sm text-gray-600 italic min-h-0">
+    <!-- Streaming response appears here -->
+  </div>
+
+  <div class="p-3 border-t bg-white">
+    <div class="flex gap-2">
+      <input data-agent-chat-target="input"
+             type="text"
+             placeholder="Ask the agent..."
+             class="flex-1 border rounded px-3 py-2 text-sm"
+             data-action="keydown.enter->agent-chat#send">
+      <button data-action="click->agent-chat#send"
+              class="px-3 py-2 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700">
+        Send
+      </button>
+    </div>
+  </div>
+</div>

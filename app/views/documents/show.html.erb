@@ -20,9 +20,6 @@
     </div>
   </div>
 
-  <!-- Agent sidebar placeholder -->
-  <div class="w-96 border-l bg-gray-50 p-4 overflow-y-auto">
-    <h2 class="font-semibold mb-4">Refinery Agent</h2>
-    <p class="text-sm text-gray-500">Agent chat coming soon...</p>
-  </div>
+  <!-- Agent sidebar -->
+  <%= render "agent_chats/sidebar", conversable_type: "Document", conversable_id: @document.id %>
 </div>

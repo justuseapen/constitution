@@ -15,3 +15,6 @@ application.register("mermaid", MermaidController)
 
 import KanbanController from "./kanban_controller"
 application.register("kanban", KanbanController)
+
+import AgentChatController from "./agent_chat_controller"
+application.register("agent-chat", AgentChatController)
