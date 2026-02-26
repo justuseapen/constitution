@@ -36,6 +36,19 @@ class ContextBuilder
     self
   end
 
+  def add_semantic_code_search(query, limit: 5)
+    chunks = CodeSearchService.search(@project, query, limit: limit)
+    Array(chunks).each do |chunk|
+      file = chunk.codebase_file
+      @sections << {
+        priority: 4,
+        label: "Code: #{file.path}:#{chunk.start_line}-#{chunk.end_line}",
+        content: chunk.content
+      }
+    end
+    self
+  end
+
   def add_conversation_history(conversation)
     return self unless conversation
     messages = conversation.messages.order(:created_at).last(20)

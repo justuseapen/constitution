@@ -1,7 +1,7 @@
 # Engineering State - Constitution
 
 ## Last Updated
-2026-02-26T20:30:00Z
+2026-02-26T21:15:00Z
 
 ## Current Sprint Goal
 Initialize Rails 8 application with Docker Compose infrastructure (Postgres, Neo4j, Redis) and core gems
@@ -30,6 +30,7 @@ Initialize Rails 8 application with Docker Compose infrastructure (Postgres, Neo
 | Validator Inbox UI | Complete | master | Feedback inbox with filtering and work order creation |
 | Action Cable Channels & Presence | Complete | master | Real-time channels with presence tracking |
 | Notification Center UI | Complete | master | Bell icon dropdown with real-time notification updates |
+| Repository Model & Indexing Pipeline | Complete | master | Codebase indexing with pgvector embeddings and semantic artifact extraction |
 
 ## Blockers
 - [ ] _None yet_
@@ -380,6 +381,131 @@ Technical decisions:
 - Submitted_by_email enables user follow-up without full user accounts
 
 ## Context for Next Session
+Task 22 complete: Repository Model & Indexing Pipeline.
+
+Key files created/modified:
+- **Migrations:**
+  - `db/migrate/20260226210000_create_repositories.rb` - Repositories table with indexing_status enum
+  - `db/migrate/20260226210001_create_codebase_files.rb` - Files table with path, content, sha, language
+  - `db/migrate/20260226210002_create_codebase_chunks.rb` - Chunks table with vector(1536) embedding, ivfflat index
+  - `db/migrate/20260226210003_create_extracted_artifacts.rb` - Artifacts table with artifact_type enum, jsonb metadata
+
+- **Models:**
+  - `app/models/repository.rb` - Includes GraphSync, belongs_to ServiceSystem, has_many codebase_files
+  - `app/models/codebase_file.rb` - Belongs to Repository, has_many codebase_chunks and extracted_artifacts
+  - `app/models/codebase_chunk.rb` - Belongs to CodebaseFile, has_neighbors :embedding for vector search
+  - `app/models/extracted_artifact.rb` - Includes GraphSync, belongs to CodebaseFile, artifact_type enum (10 types)
+
+- **Services:**
+  - `app/services/code_parser.rb` - Parses Ruby, JS/TS, YAML to extract semantic artifacts
+
+- **Jobs:**
+  - `app/jobs/codebase_index_job.rb` - Clones repo, indexes files, chunks content, generates embeddings
+
+- **Specs & Factories:**
+  - `spec/models/repository_spec.rb`, `spec/models/codebase_file_spec.rb`, `spec/models/codebase_chunk_spec.rb`, `spec/models/extracted_artifact_spec.rb`
+  - `spec/services/code_parser_spec.rb` - Tests artifact extraction and chunking
+  - `spec/jobs/codebase_index_job_spec.rb` - Tests job status updates and error handling
+  - `spec/factories/repositories.rb`, `spec/factories/codebase_files.rb`, `spec/factories/codebase_chunks.rb`, `spec/factories/extracted_artifacts.rb`
+
+Commit: 12c6d13 "feat: add codebase indexing pipeline with pgvector embeddings"
+
+Features implemented:
+- **Repository Model:**
+  - Includes GraphSync for Neo4j node creation
+  - Belongs to ServiceSystem (ServiceSystem already has has_many :repositories)
+  - Has_many codebase_files (dependent: :destroy)
+  - Enum indexing_status: pending, indexing, indexed, failed
+  - Validates name and url presence
+  - Tracks last_indexed_at timestamp
+
+- **CodebaseFile Model:**
+  - Belongs to Repository
+  - Has_many codebase_chunks and extracted_artifacts (both dependent: :destroy)
+  - Stores file path, language, content, SHA hash for change detection
+  - Unique constraint on [repository_id, path]
+  - Tracks last_indexed_at for incremental updates
+
+- **CodebaseChunk Model:**
+  - Belongs to CodebaseFile
+  - Uses neighbor gem: has_neighbors :embedding for vector similarity search
+  - Stores chunk content, chunk_type, start_line, end_line
+  - Vector(1536) embedding field for OpenAI text-embedding-3-small
+  - IVFFlat index on embedding column for fast cosine similarity search
+  - Validates content presence
+
+- **ExtractedArtifact Model:**
+  - Includes GraphSync for automatic Neo4j node creation
+  - Belongs to CodebaseFile
+  - Artifact_type enum with 10 types: route, controller, model, service, api_client, event_emitter, queue_publisher, queue_consumer, protobuf, openapi_spec
+  - JSONB metadata field for flexible artifact-specific data
+  - Unique constraint on [codebase_file_id, name]
+  - Validates name and artifact_type presence
+
+- **CodeParser Service:**
+  - Detects language from file extension (.rb, .js, .ts, .yml, .yaml, .proto, .json)
+  - parse() method:
+    - Ruby: Extracts classes, routes, controller actions, service objects
+    - JavaScript/TypeScript: Extracts API client calls (fetch/axios), event emitters
+    - YAML: Extracts Docker Compose service definitions
+    - Returns empty array for unsupported languages
+  - chunk() method:
+    - Semantic chunking: Uses extracted artifacts to create chunks by method/class boundaries
+    - Fallback: Sliding window of 50 lines for files without parseable artifacts
+    - Returns chunks with content, chunk_type, start_line, end_line
+  - Helper methods:
+    - line_number_of(text): Finds line number containing text
+    - find_end_line(start_line): Searches for matching 'end' keyword using indentation
+
+- **CodebaseIndexJob:**
+  - Queue: default
+  - Updates repository.indexing_status to :indexing on start
+  - clone_or_pull: Clones repo or pulls latest changes (--depth=1 for speed)
+  - index_files:
+    - Iterates all files in repo
+    - Skips: node_modules, .git, vendor, tmp, log, images, fonts, minified files, lock files
+    - Calculates SHA hash, skips if unchanged
+    - Creates/updates CodebaseFile with content, language, sha, last_indexed_at
+    - Destroys old artifacts, creates new ones via CodeParser.parse
+    - Destroys old chunks, creates new ones via CodeParser.chunk
+  - generate_embeddings:
+    - Finds all chunks without embeddings
+    - Calls OPENROUTER_CLIENT.embeddings with model: "openai/text-embedding-3-small"
+    - Truncates content to 8000 chars for API limits
+    - Updates chunk with embedding vector
+    - Logs warnings on failures (continues indexing)
+  - On success: Sets status to :indexed, updates last_indexed_at
+  - On error: Sets status to :failed, logs error, re-raises exception
+
+Implementation notes:
+- Database NOT running - all syntax validated with ruby -c
+- All specs created but not executed (require database and factories)
+- Vector index uses ivfflat with vector_cosine_ops for fast approximate nearest neighbor search
+- Neighbor gem adds has_neighbors method for vector similarity queries
+- ExtractedArtifact syncs to Neo4j for relationship mapping with Documents, Blueprints, etc.
+- Repository syncs to Neo4j as nodes (can link to ServiceSystem nodes)
+- CodeParser regex patterns designed for common Rails/JS patterns (not AST parsing)
+- SHA-based change detection prevents re-indexing unchanged files
+- Embeddings generated only for chunks without embeddings (incremental)
+- Job designed to be idempotent (can re-run safely)
+- Metadata JSONB allows storing file-specific context (e.g., HTTP methods for routes, event names)
+
+Technical decisions:
+- Used neighbor gem for pgvector integration (simpler than pg_vector directly)
+- IVFFlat index chosen over HNSW (better for datasets under 1M vectors, faster inserts)
+- Chunk size: 50 lines max for sliding window (balances context vs. precision)
+- Semantic chunking prioritized over fixed-size chunking (preserves meaning)
+- SHA hash for change detection (more reliable than timestamp comparison)
+- Git clone with --depth=1 for faster initial clone (full history not needed)
+- Regex-based parsing over AST parsing (simpler, good enough for artifact extraction)
+- ExtractedArtifact includes GraphSync (artifacts are first-class entities in graph)
+- CodebaseFile does NOT include GraphSync (too many nodes, not useful for graph queries)
+- Artifacts destroyed/recreated on re-index (simpler than diff-based updates)
+- Embedding generation continues on chunk failures (partial success better than full failure)
+- OPENROUTER_CLIENT already initialized in config/initializers/openrouter.rb
+
+Ready for next task: Codebase indexing pipeline complete. Ready to build UI for repository management, or add semantic code search endpoint using vector similarity.
+
 Tasks 19, 20, and 21 complete: Validator Inbox UI, Action Cable Channels & Presence, and Notification Center UI.
 
 ### Task 19: Validator Inbox UI
