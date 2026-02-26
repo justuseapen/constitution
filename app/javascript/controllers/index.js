@@ -24,3 +24,6 @@ application.register("system-map", SystemMapController)
 
 import PresenceController from "./presence_controller"
 application.register("presence", PresenceController)
+
+import NotificationsController from "./notifications_controller"
+application.register("notifications", NotificationsController)

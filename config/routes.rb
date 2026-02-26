@@ -16,6 +16,13 @@ Rails.application.routes.draw do
 
   resources :systems
 
+  resources :notifications, only: [:index] do
+    collection do
+      post :mark_read
+      get :unread_count
+    end
+  end
+
   namespace :api do
     namespace :v1 do
       resources :feedback, only: [:create], controller: "feedback"

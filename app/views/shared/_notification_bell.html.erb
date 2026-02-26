@@ -1,0 +1,24 @@
+<div data-controller="notifications"
+     data-notifications-url-value="<%= notifications_path(format: :json) %>"
+     data-notifications-mark-read-url-value="<%= mark_read_notifications_path %>"
+     class="relative">
+  <button data-action="click->notifications#toggle" class="relative p-2">
+    <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+    </svg>
+    <span data-notifications-target="badge"
+          class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">
+      0
+    </span>
+  </button>
+
+  <div data-notifications-target="dropdown"
+       class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border z-50 max-h-96 overflow-y-auto">
+    <div class="p-3 border-b">
+      <h3 class="font-semibold text-sm">Notifications</h3>
+    </div>
+    <div data-notifications-target="list" class="divide-y">
+      <!-- Notifications load here -->
+    </div>
+  </div>
+</div>
