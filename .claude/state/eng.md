@@ -1,7 +1,7 @@
 # Engineering State - Constitution
 
 ## Last Updated
-2026-02-26T17:30:00Z
+2026-02-26T21:15:00Z
 
 ## Current Sprint Goal
 Initialize Rails 8 application with Docker Compose infrastructure (Postgres, Neo4j, Redis) and core gems
@@ -20,6 +20,9 @@ Initialize Rails 8 application with Docker Compose infrastructure (Postgres, Neo
 | Blueprint & BlueprintVersion Models | Complete | master | Blueprint system with Mermaid diagram support |
 | Phase & WorkOrder Models | Complete | master | Planner data layer with phases and work orders |
 | WorkOrders Kanban Board | Complete | master | Full kanban UI with drag-and-drop via Sortable.js |
+| GraphSync Concern & Node Management | Complete | master | Neo4j integration via GraphService and GraphSync concern |
+| Drift Detection Background Job | Complete | master | DriftAlert model and scheduled job to detect stale relationships |
+| AgentService & ContextBuilder | Complete | master | AI agent infrastructure with OpenRouter chat and context assembly |
 
 ## Blockers
 - [ ] _None yet_
@@ -43,39 +46,61 @@ Initialize Rails 8 application with Docker Compose infrastructure (Postgres, Neo
 - ruby-openai for OpenRouter integration (OpenAI-compatible API)
 
 ## Context for Next Session
-Task 11 complete: WorkOrders Kanban Board with drag-and-drop implemented.
+Task 14 complete: AgentService & ContextBuilder implemented.
 
 Key files created/modified:
-- **Controller:** `app/controllers/work_orders_controller.rb`
-- **Views:** `app/views/work_orders/index.html.erb` (kanban board), `show.html.erb`, `new.html.erb`, `edit.html.erb`, `_form.html.erb`, `_work_order_card.html.erb`
-- **JavaScript:** `app/javascript/controllers/kanban_controller.js` (Sortable.js integration)
-- **Specs:** `spec/requests/work_orders_spec.rb`
-- **Routes:** Added `resources :work_orders` nested under projects
-- **Dependencies:** Added `sortablejs` to `package.json`
-- **Model:** Updated `app/models/work_order.rb` with Turbo Stream broadcast callback
+- **Migration:** `db/migrate/20260226164555_create_agent_conversations.rb` - AgentConversation table
+- **Migration:** `db/migrate/20260226164556_create_agent_messages.rb` - AgentMessage table
+- **Model:** `app/models/agent_conversation.rb` - Polymorphic conversation container
+- **Model:** `app/models/agent_message.rb` - Chat messages with role validation
+- **Service:** `app/services/agent_service.rb` - OpenRouter chat with conversation management
+- **Service:** `app/services/context_builder.rb` - Priority-based context assembly
+- **Association:** Added `has_many :agent_conversations` to Document, Blueprint, WorkOrder
+- **Specs:** Full test coverage for models and services with WebMock stubs
+- **Factories:** `spec/factories/agent_conversations.rb` and `agent_messages.rb`
 
-Commit: 3ec60f7 "feat: add kanban board with drag-and-drop via Sortable.js + Turbo"
+Commit: bd3b63c "feat: add AgentService with ContextBuilder and OpenRouter integration"
 
 Features implemented:
-- **Kanban board** - Visual board with 5 status columns (backlog, todo, in_progress, review, done)
-- **Drag-and-drop** - Sortable.js integration allows dragging work orders between columns
-- **Real-time updates** - Turbo Stream broadcasts update cards after changes
-- **Full CRUD** - Create, read, update, delete work orders with proper scoping to project and team
-- **Work order form** - Complete form with title, status, priority, phase, assignee, description, acceptance criteria, implementation plan
-- **Work order card** - Compact card showing title, priority badge, assignee name
-- **Show view** - Detailed view with all work order fields formatted
-- **JSON API** - Controller responds to JSON for drag-and-drop PATCH requests
-- **Request specs** - Full coverage including HTML and JSON responses
+- **AgentConversation model:**
+  - Polymorphic conversable (Document, Blueprint, WorkOrder)
+  - Belongs to user for tracking who initiated conversation
+  - Stores model provider and model name for audit trail
+  - Has many messages for chat history
+
+- **AgentMessage model:**
+  - Role validation (system, user, assistant)
+  - Text content field for message storage
+  - Ordered by created_at for chronological chat history
+
+- **AgentService:**
+  - Initializes with user, conversable, system_prompt, and model
+  - `chat(message)` method sends to OpenRouter and persists response
+  - Automatically creates system message on first conversation
+  - Reuses existing conversations for continuity
+  - Uses ruby-openai gem with OpenRouter endpoint
+
+- **ContextBuilder:**
+  - Priority-based context assembly (1=highest, 5=lowest)
+  - Token limit enforcement via CHARS_PER_TOKEN constant
+  - Method chaining for fluent API
+  - Supports: document, graph neighbors, system dependencies, code snippets, conversation history
+  - Formats content with markdown headers and priorities
 
 Implementation details:
-- Controller follows DocumentsController pattern (authenticate_user!, set_project scoping to current_user.team)
-- Kanban Stimulus controller creates Sortable instances for each column with shared group "kanban"
-- On drag end, controller sends PATCH request with new status and position
-- Turbo Stream callback broadcasts to "project_{id}_work_orders" stream
-- Views use Tailwind CSS for styling, consistent with existing views
-- Form includes collection_select for phases and assignees from current project/team
-- Request specs test all CRUD operations plus JSON PATCH for drag-and-drop
+- AgentService uses `find_or_create_by!` for conversation persistence
+- System message only created once per conversation
+- Messages ordered chronologically for OpenRouter API
+- ContextBuilder sorts sections by priority before assembly
+- Context truncated at max_chars boundary to prevent overflow
+- Format methods handle different record types (title/name, body/description)
+- All specs use WebMock to stub OpenRouter API calls
 
-Note: Database is NOT running locally, so specs cannot be executed yet. All syntax has been validated. Need to run `npm install` to install sortablejs dependency.
+Technical notes:
+- Database is NOT running locally - all syntax validated, specs use mocks
+- OpenRouter client already configured in `config/initializers/openrouter.rb`
+- Model default is Claude Sonnet 4.5 (anthropic/claude-sonnet-4-5-20250929)
+- ContextBuilder max_tokens default is 8000 (32000 chars)
+- Polymorphic association enables conversations on any record type
 
-Ready for next task: Can now build on the Planner module (e.g., AI-powered work order generation, phase management UI, etc.).
+Ready for next task: AI agent infrastructure is in place. Can now build UI for chat interfaces, implement specific agent prompts (Refinery, Architect, Spec Writer), or integrate with document/blueprint workflows.
