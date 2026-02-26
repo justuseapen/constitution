@@ -1,7 +1,7 @@
 # Engineering State - Constitution
 
 ## Last Updated
-2026-02-26T23:45:00Z
+2026-02-26T19:15:00Z
 
 ## Current Sprint Goal
 Initialize Rails 8 application with Docker Compose infrastructure (Postgres, Neo4j, Redis) and core gems
@@ -25,6 +25,8 @@ Initialize Rails 8 application with Docker Compose infrastructure (Postgres, Neo
 | AgentService & ContextBuilder | Complete | master | AI agent infrastructure with OpenRouter chat and context assembly |
 | Agent Chat Sidebar with Streaming | Complete | master | Real-time chat UI with Action Cable streaming for all conversable types |
 | ServiceSystem & SystemDependency Models | Complete | master | System Registry data layer with microservice architecture mapping |
+| System Map Visualization with D3.js | Complete | master | Interactive force-directed graph showing services and dependencies |
+| FeedbackItem Model & API Endpoint | Complete | master | Validator API with auto-triage job using AI |
 
 ## Blockers
 - [ ] _None yet_
@@ -48,7 +50,7 @@ Initialize Rails 8 application with Docker Compose infrastructure (Postgres, Neo
 - ruby-openai for OpenRouter integration (OpenAI-compatible API)
 
 ## Context for Next Session
-Task 16 complete: ServiceSystem & SystemDependency Models implemented.
+Task 18 complete: FeedbackItem Model & API Endpoint with auto-triage implemented.
 
 Key files created/modified:
 - **Channel:** `app/channels/agent_chat_channel.rb` - Action Cable channel for streaming
@@ -188,3 +190,190 @@ Technical decisions:
 - Source/target naming convention clarifies directionality of dependencies
 
 Ready for next task: System Registry data layer complete. Can now build Repository model, or add CRUD controllers/views for managing service systems and their dependencies.
+
+Key files created/modified:
+- **Controller:** `app/controllers/systems_controller.rb` - Full CRUD for service systems with JSON API
+- **Stimulus:** `app/javascript/controllers/system_map_controller.js` - D3.js force-directed graph
+- **Helper:** `app/helpers/systems_helper.rb` - System type color mapping
+- **Views:**
+  - `app/views/systems/index.html.erb` - System map with graph and grid of systems
+  - `app/views/systems/show.html.erb` - System details with incoming/outgoing dependencies
+  - `app/views/systems/new.html.erb` - New system form
+  - `app/views/systems/edit.html.erb` - Edit system form
+  - `app/views/systems/_form.html.erb` - Shared form partial
+- **Routes:** Added `resources :systems`
+- **Package:** Added `d3@^7.9.0` to package.json
+- **Spec:** `spec/requests/systems_spec.rb` - Request spec for systems endpoints
+- **Manifest:** Registered system-map controller in `app/javascript/controllers/index.js`
+
+Features implemented:
+- **SystemsController:**
+  - index: HTML view with D3 graph + grid of systems, JSON API returns nodes/edges
+  - show: Display system details with incoming/outgoing dependencies
+  - new/create: Create new service system
+  - edit/update: Update existing system
+  - destroy: Delete system
+  - Team-scoped via current_user.team.service_systems
+  - Strong params: name, description, repo_url, system_type
+
+- **system_map_controller.js (D3.js):**
+  - Fetches JSON data from systems endpoint
+  - Force-directed graph with d3.forceSimulation
+  - Color-coded nodes by system_type:
+    - service: blue (#3B82F6)
+    - library: purple (#8B5CF6)
+    - database: green (#10B981)
+    - queue: orange (#F59E0B)
+    - external_api: red (#EF4444)
+  - Color-coded edges by dependency_type:
+    - http_api: blue
+    - rabbitmq: orange
+    - grpc: purple
+    - database_shared: green
+    - event_bus: orange-red
+    - sdk: gray
+  - Arrow markers on edges showing directionality
+  - Edge labels showing dependency type
+  - Drag-and-drop nodes (fixes position while dragging)
+  - Node labels below circles
+  - Responsive SVG size (uses container width or 800px default)
+
+- **Views:**
+  - index.html.erb:
+    - D3 graph in white card with shadow
+    - Grid of system cards below with color-coded left border
+    - "Add System" button in header
+    - System cards show name, type, and truncated description
+  - show.html.erb:
+    - System name, type badge, repo URL link
+    - Description in prose format
+    - Outgoing dependencies (what this system depends on)
+    - Incoming dependencies (what depends on this system)
+    - Edit and back to System Map buttons
+  - Form partial:
+    - Name, system_type select, repo_url, description fields
+    - Error display for validation failures
+    - Tailwind-styled form inputs
+
+- **Helper:**
+  - system_color(system_type): Returns hex color for border/node styling
+
+Implementation notes:
+- D3.js v7.9.0 for force-directed graph visualization
+- JSON API endpoint at /systems.json returns { nodes: [...], edges: [...] }
+- Nodes include id, name, type
+- Edges include source, target, type (dependency_type), metadata
+- Graph uses d3.forceLink to bind edges to node IDs
+- Arrow markers created in SVG defs for each dependency type
+- Simulation forces: link (distance 150), charge (-300), center
+- Drag handlers set fx/fy to fix position, clear on drag end
+- Tick handler updates link positions and node transforms
+- Link labels positioned at midpoint between nodes
+- All Ruby syntax validated with ruby -c
+- Database not running - spec created but not executed
+
+Technical decisions:
+- Used D3.js force simulation for automatic layout (no manual positioning)
+- Color-coded both nodes and edges for visual clarity
+- Added arrow markers to show dependency direction
+- Edge labels help identify dependency types without needing legend
+- Grid view below graph provides quick access to individual systems
+- JSON format matches D3.js expectations (id field for nodes, source/target for edges)
+- Form uses ServiceSystem.system_types.keys for dynamic enum select
+- Helper extracts color logic for reuse across views
+- Includes eager loading (:outgoing_dependencies, :target_system, :source_system) to avoid N+1 queries
+
+Key files created/modified:
+- **Migrations:**
+  - `db/migrate/20260226190000_create_app_keys.rb` - Project-scoped API keys with unique token index
+  - `db/migrate/20260226190001_create_feedback_items.rb` - Feedback with category/status enums, jsonb technical_context
+
+- **Models:**
+  - `app/models/app_key.rb` - Auto-generates tokens (sf-int-*), active scope, belongs to project
+  - `app/models/feedback_item.rb` - GraphSync concern, polymorphic comments, enqueues triage job after create
+  - `app/models/project.rb` - Added has_many :app_keys association
+
+- **API Controller:**
+  - `app/controllers/api/v1/feedback_controller.rb` - REST API with Bearer token authentication
+
+- **Job:**
+  - `app/jobs/feedback_triage_job.rb` - AI categorization using OPENROUTER_CLIENT and Claude Haiku 4.5
+
+- **Routes:**
+  - `config/routes.rb` - Added namespace :api/:v1/feedback (POST only)
+
+- **Specs:**
+  - `spec/models/app_key_spec.rb` - Token generation validation
+  - `spec/models/feedback_item_spec.rb` - Enum and association validations
+  - `spec/requests/api/v1/feedback_spec.rb` - API authentication and creation tests
+  - `spec/jobs/feedback_triage_job_spec.rb` - AI categorization with webmock stub
+
+- **Factories:**
+  - `spec/factories/app_keys.rb` - Uses Faker::App.name
+  - `spec/factories/feedback_items.rb` - Default uncategorized/new_item status
+
+Commit: 4301b4d "feat: add Validator API endpoint with auto-triage"
+
+Features implemented:
+- **AppKey Model:**
+  - Belongs to project for team-scoped API access
+  - Auto-generates secure tokens: "sf-int-" + 24 hex chars
+  - Active scope for filtering disabled keys
+  - Unique token constraint at database level
+  - Used for authenticating external app feedback submissions
+
+- **FeedbackItem Model:**
+  - Includes GraphSync for automatic Neo4j node creation
+  - Belongs to project, has_many comments (polymorphic)
+  - Title required (body optional for quick reports)
+  - Category enum: uncategorized (default), bug, feature_request, performance
+  - Status enum: new_item, triaged, in_progress, resolved, dismissed
+  - JSONB technical_context field for browser, URL, user agent, stack traces, etc.
+  - Optional submitted_by_email for follow-up
+  - Optional source field (e.g., "mobile-app", "web-checkout")
+  - Score field (1-10) populated by AI triage
+  - Automatically enqueues FeedbackTriageJob on create
+
+- **FeedbackController (API):**
+  - ActionController::API (no session, CSRF, or cookies)
+  - POST /api/v1/feedback creates feedback item
+  - Authenticates via Authorization: Bearer <token> header
+  - Returns 201 Created with feedback ID on success
+  - Returns 422 Unprocessable Entity with errors on validation failure
+  - Returns 401 Unauthorized for invalid/inactive app keys
+  - Strong params: title, body, source, submitted_by_email, technical_context (hash)
+  - Sets @project from authenticated app_key for scoping
+
+- **FeedbackTriageJob:**
+  - Runs asynchronously via Solid Queue (Redis-backed)
+  - Only processes uncategorized feedback (guards against re-triage)
+  - Calls OPENROUTER_CLIENT.chat with Claude Haiku 4.5 model
+  - System prompt: "Categorize this feedback. Respond with JSON: {\"category\": \"bug|feature_request|performance\", \"score\": 1-10}"
+  - User prompt includes title, body, and technical_context JSON
+  - Parses AI response and updates feedback with category, score, and triaged status
+  - Rescue JSON parse errors with empty hash fallback
+
+Implementation notes:
+- Database not running - all syntax validated with ruby -c
+- All specs created but not executed (require database)
+- AppKey tokens generated with SecureRandom for cryptographic security
+- GraphService.create_node stubbed in specs to avoid Neo4j dependency
+- Job spec uses webmock to stub OpenRouter API calls
+- Request spec tests both successful creation and unauthorized rejection
+- Technical context stored as JSONB for flexible schema (can include any metadata)
+- Enums use integer storage for efficient indexing/querying
+- Feedback auto-synced to Neo4j for relationship mapping with Documents, Blueprints, etc.
+
+Technical decisions:
+- Used Bearer token authentication (common for REST APIs)
+- ActionController::API for lean JSON-only responses (no view rendering)
+- JSONB for technical_context allows dynamic fields without migrations
+- Auto-triage on create keeps feedback organized without manual intervention
+- Score field enables priority sorting (high-score bugs bubble up)
+- Status enum supports full feedback lifecycle (new → triaged → in progress → resolved/dismissed)
+- Polymorphic comments allow team discussions on feedback items
+- App keys scoped to projects enable multi-project deployments
+- Active flag on app keys allows soft disabling without deletion
+- Submitted_by_email enables user follow-up without full user accounts
+
+Ready for next task: Validator API complete. Can now collect feedback from external apps, auto-categorize with AI, and manage triage lifecycle.
