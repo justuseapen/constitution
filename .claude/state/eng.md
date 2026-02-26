@@ -1,7 +1,7 @@
 # Engineering State - Constitution
 
 ## Last Updated
-2026-02-26T21:15:00Z
+2026-02-26T22:30:00Z
 
 ## Current Sprint Goal
 Initialize Rails 8 application with Docker Compose infrastructure (Postgres, Neo4j, Redis) and core gems
@@ -23,6 +23,7 @@ Initialize Rails 8 application with Docker Compose infrastructure (Postgres, Neo
 | GraphSync Concern & Node Management | Complete | master | Neo4j integration via GraphService and GraphSync concern |
 | Drift Detection Background Job | Complete | master | DriftAlert model and scheduled job to detect stale relationships |
 | AgentService & ContextBuilder | Complete | master | AI agent infrastructure with OpenRouter chat and context assembly |
+| Agent Chat Sidebar with Streaming | Complete | master | Real-time chat UI with Action Cable streaming for all conversable types |
 
 ## Blockers
 - [ ] _None yet_
@@ -46,61 +47,75 @@ Initialize Rails 8 application with Docker Compose infrastructure (Postgres, Neo
 - ruby-openai for OpenRouter integration (OpenAI-compatible API)
 
 ## Context for Next Session
-Task 14 complete: AgentService & ContextBuilder implemented.
+Task 15 complete: Agent Chat Sidebar with Streaming implemented.
 
 Key files created/modified:
-- **Migration:** `db/migrate/20260226164555_create_agent_conversations.rb` - AgentConversation table
-- **Migration:** `db/migrate/20260226164556_create_agent_messages.rb` - AgentMessage table
-- **Model:** `app/models/agent_conversation.rb` - Polymorphic conversation container
-- **Model:** `app/models/agent_message.rb` - Chat messages with role validation
-- **Service:** `app/services/agent_service.rb` - OpenRouter chat with conversation management
-- **Service:** `app/services/context_builder.rb` - Priority-based context assembly
-- **Association:** Added `has_many :agent_conversations` to Document, Blueprint, WorkOrder
-- **Specs:** Full test coverage for models and services with WebMock stubs
-- **Factories:** `spec/factories/agent_conversations.rb` and `agent_messages.rb`
+- **Channel:** `app/channels/agent_chat_channel.rb` - Action Cable channel for streaming
+- **Job:** `app/jobs/agent_chat_job.rb` - Background job with OpenRouter streaming
+- **Controller:** `app/controllers/agent_chats_controller.rb` - Chat endpoint and system prompt logic
+- **Stimulus:** `app/javascript/controllers/agent_chat_controller.js` - WebSocket client and UI updates
+- **Partial:** `app/views/agent_chats/_sidebar.html.erb` - Reusable chat sidebar component
+- **Views:** Updated show pages for Document, Blueprint, WorkOrder with agent sidebar
+- **Routes:** Added `resources :agent_chats, only: [:create]`
+- **Spec:** `spec/requests/agent_chats_spec.rb` - Request spec for chat endpoint
+- **Manifest:** Registered agent-chat controller in `app/javascript/controllers/index.js`
 
-Commit: bd3b63c "feat: add AgentService with ContextBuilder and OpenRouter integration"
+Commit: bc44180 "feat: add agent chat sidebar with streaming via Action Cable"
 
 Features implemented:
-- **AgentConversation model:**
-  - Polymorphic conversable (Document, Blueprint, WorkOrder)
-  - Belongs to user for tracking who initiated conversation
-  - Stores model provider and model name for audit trail
-  - Has many messages for chat history
+- **AgentChatChannel:**
+  - Subscribes to conversable-specific stream
+  - Format: `agent_chat_{ConversableType}_{id}`
 
-- **AgentMessage model:**
-  - Role validation (system, user, assistant)
-  - Text content field for message storage
-  - Ordered by created_at for chronological chat history
+- **AgentChatJob:**
+  - Creates user message, streams response, saves assistant message
+  - Broadcasts delta chunks and complete event via Action Cable
+  - Uses OPENROUTER_CLIENT with streaming proc
+  - Full response accumulated and persisted after streaming
 
-- **AgentService:**
-  - Initializes with user, conversable, system_prompt, and model
-  - `chat(message)` method sends to OpenRouter and persists response
-  - Automatically creates system message on first conversation
-  - Reuses existing conversations for continuity
-  - Uses ruby-openai gem with OpenRouter endpoint
+- **AgentChatsController:**
+  - Authenticates user, finds/creates conversation
+  - Context-specific system prompts:
+    - Document → Refinery Agent (requirements, gaps, ambiguity)
+    - Blueprint → Foundry Agent (design, architecture, alignment)
+    - WorkOrder → Planner Agent (scoping, criteria, implementation)
+  - Enqueues AgentChatJob and returns 202 Accepted
 
-- **ContextBuilder:**
-  - Priority-based context assembly (1=highest, 5=lowest)
-  - Token limit enforcement via CHARS_PER_TOKEN constant
-  - Method chaining for fluent API
-  - Supports: document, graph neighbors, system dependencies, code snippets, conversation history
-  - Formats content with markdown headers and priorities
+- **agent_chat_controller.js:**
+  - Creates Action Cable consumer on connect
+  - Subscribes to conversable-specific channel
+  - Appends delta chunks to response target in real-time
+  - On complete: moves full response to messages area
+  - Sends POST to endpoint with CSRF token
+  - Unsubscribes on disconnect
+
+- **_sidebar.html.erb:**
+  - Fixed height layout with flex columns
+  - Messages area (scrollable)
+  - Response area (streaming deltas)
+  - Input with Enter key support and Send button
+  - Data attributes for Stimulus controller values
+
+- **View integration:**
+  - Document, Blueprint, WorkOrder show pages now use flex layout
+  - Main content area (flex-1) + agent sidebar (w-80)
+  - Consistent h-[calc(100vh-4rem)] for full-height layout
+  - WorkOrder show page restructured to match layout pattern
 
 Implementation details:
-- AgentService uses `find_or_create_by!` for conversation persistence
-- System message only created once per conversation
-- Messages ordered chronologically for OpenRouter API
-- ContextBuilder sorts sections by priority before assembly
-- Context truncated at max_chars boundary to prevent overflow
-- Format methods handle different record types (title/name, body/description)
-- All specs use WebMock to stub OpenRouter API calls
+- Job uses proc streaming to broadcast deltas immediately
+- Stimulus controller appends text to responseTarget on delta events
+- On complete event, moves text to messagesTarget and clears response
+- User messages added to DOM immediately for instant feedback
+- Sidebar uses conversable_type and conversable_id for polymorphism
+- Agent prompts defined inline in controller (could be extracted later)
 
 Technical notes:
-- Database is NOT running locally - all syntax validated, specs use mocks
-- OpenRouter client already configured in `config/initializers/openrouter.rb`
-- Model default is Claude Sonnet 4.5 (anthropic/claude-sonnet-4-5-20250929)
-- ContextBuilder max_tokens default is 8000 (32000 chars)
-- Polymorphic association enables conversations on any record type
+- Database is NOT running locally - all syntax validated
+- Action Cable requires Redis (already configured in Docker Compose)
+- Streaming works via WebSocket connection, not HTTP
+- CSRF token required for POST requests from JS
+- Sidebar width (w-80) matches existing Document/Blueprint layout
+- Request spec uses have_enqueued_job matcher for async testing
 
-Ready for next task: AI agent infrastructure is in place. Can now build UI for chat interfaces, implement specific agent prompts (Refinery, Architect, Spec Writer), or integrate with document/blueprint workflows.
+Ready for next task: Agent chat UI is fully functional with streaming. Can now enhance with conversation history loading, improve error handling, add typing indicators, or build additional agent capabilities.

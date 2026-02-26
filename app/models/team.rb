@@ -1,6 +1,7 @@
 class Team < ApplicationRecord
   has_many :users, dependent: :destroy
   has_many :projects, dependent: :destroy
+  has_many :service_systems, dependent: :destroy
 
   validates :name, presence: true
   validates :slug, presence: true, uniqueness: true
