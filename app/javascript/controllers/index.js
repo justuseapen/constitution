@@ -21,3 +21,6 @@ application.register("agent-chat", AgentChatController)
 
 import SystemMapController from "./system_map_controller"
 application.register("system-map", SystemMapController)
+
+import PresenceController from "./presence_controller"
+application.register("presence", PresenceController)
