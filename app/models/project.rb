@@ -9,4 +9,19 @@ class Project < ApplicationRecord
   validates :name, presence: true
 
   enum :status, { active: 0, archived: 1 }, default: :active
+
+  def self.seed_documents(project, user)
+    project.documents.create!(
+      title: "Product Overview",
+      body: "<h2>Business Problem</h2><p></p><h2>Target Users</h2><p></p><h2>Success Criteria</h2><p></p>",
+      document_type: :product_overview,
+      created_by: user
+    )
+    project.documents.create!(
+      title: "Technical Requirements",
+      body: "<h2>Authentication &amp; Authorization</h2><p></p><h2>Performance</h2><p></p><h2>Security</h2><p></p>",
+      document_type: :technical_requirement,
+      created_by: user
+    )
+  end
 end

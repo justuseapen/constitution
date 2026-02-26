@@ -16,6 +16,7 @@ class ProjectsController < ApplicationController
   def create
     @project = current_user.team.projects.build(project_params)
     if @project.save
+      Project.seed_documents(@project, current_user)
       redirect_to @project, notice: "Project created."
     else
       render :new, status: :unprocessable_entity
