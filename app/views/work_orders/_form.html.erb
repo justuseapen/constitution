@@ -1,0 +1,59 @@
+<%= form_with(model: [@project, work_order], class: "space-y-4") do |f| %>
+  <% if work_order.errors.any? %>
+    <div class="bg-red-50 p-4 rounded">
+      <% work_order.errors.full_messages.each do |msg| %>
+        <p class="text-red-600 text-sm"><%= msg %></p>
+      <% end %>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :title, class: "block text-sm font-medium text-gray-700" %>
+    <%= f.text_field :title, class: "mt-1 block w-full border rounded px-3 py-2" %>
+  </div>
+
+  <div class="grid grid-cols-2 gap-4">
+    <div>
+      <%= f.label :status, class: "block text-sm font-medium text-gray-700" %>
+      <%= f.select :status, WorkOrder.statuses.keys.map { |k| [k.humanize, k] },
+          {}, class: "mt-1 block w-full border rounded px-3 py-2" %>
+    </div>
+    <div>
+      <%= f.label :priority, class: "block text-sm font-medium text-gray-700" %>
+      <%= f.select :priority, WorkOrder.priorities.keys.map { |k| [k.humanize, k] },
+          {}, class: "mt-1 block w-full border rounded px-3 py-2" %>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 gap-4">
+    <div>
+      <%= f.label :phase_id, "Phase", class: "block text-sm font-medium text-gray-700" %>
+      <%= f.collection_select :phase_id, @project.phases, :id, :name,
+          { include_blank: "No phase" }, class: "mt-1 block w-full border rounded px-3 py-2" %>
+    </div>
+    <div>
+      <%= f.label :assignee_id, "Assignee", class: "block text-sm font-medium text-gray-700" %>
+      <%= f.collection_select :assignee_id, @project.team.users, :id, :name,
+          { include_blank: "Unassigned" }, class: "mt-1 block w-full border rounded px-3 py-2" %>
+    </div>
+  </div>
+
+  <div>
+    <%= f.label :description, class: "block text-sm font-medium text-gray-700" %>
+    <%= f.text_area :description, rows: 4, class: "mt-1 block w-full border rounded px-3 py-2" %>
+  </div>
+
+  <div>
+    <%= f.label :acceptance_criteria, class: "block text-sm font-medium text-gray-700" %>
+    <%= f.text_area :acceptance_criteria, rows: 4, class: "mt-1 block w-full border rounded px-3 py-2" %>
+  </div>
+
+  <div>
+    <%= f.label :implementation_plan, class: "block text-sm font-medium text-gray-700" %>
+    <%= f.text_area :implementation_plan, rows: 4, class: "mt-1 block w-full border rounded px-3 py-2" %>
+  </div>
+
+  <div>
+    <%= f.submit class: "px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 cursor-pointer" %>
+  </div>
+<% end %>

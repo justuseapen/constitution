@@ -1,0 +1,41 @@
+<div class="p-6 max-w-4xl">
+  <div class="flex justify-between items-center mb-4">
+    <h1 class="text-2xl font-bold"><%= @work_order.title %></h1>
+    <div class="flex gap-2">
+      <%= link_to "Edit", edit_project_work_order_path(@project, @work_order), class: "px-3 py-1 border rounded text-sm" %>
+      <%= link_to "All Work Orders", project_work_orders_path(@project), class: "px-3 py-1 border rounded text-sm" %>
+    </div>
+  </div>
+
+  <div class="flex gap-2 mb-4">
+    <span class="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800"><%= @work_order.status.humanize %></span>
+    <span class="px-2 py-1 rounded text-xs font-medium bg-gray-100"><%= @work_order.priority.humanize %></span>
+    <% if @work_order.phase %>
+      <span class="text-xs text-gray-500">Phase: <%= @work_order.phase.name %></span>
+    <% end %>
+    <% if @work_order.assignee %>
+      <span class="text-xs text-gray-500">Assigned: <%= @work_order.assignee.name %></span>
+    <% end %>
+  </div>
+
+  <% if @work_order.description.present? %>
+    <div class="prose max-w-none mb-6">
+      <h3 class="text-lg font-semibold">Description</h3>
+      <p><%= @work_order.description %></p>
+    </div>
+  <% end %>
+
+  <% if @work_order.acceptance_criteria.present? %>
+    <div class="mb-6">
+      <h3 class="text-lg font-semibold">Acceptance Criteria</h3>
+      <div class="prose max-w-none"><%= simple_format(@work_order.acceptance_criteria) %></div>
+    </div>
+  <% end %>
+
+  <% if @work_order.implementation_plan.present? %>
+    <div class="mb-6">
+      <h3 class="text-lg font-semibold">Implementation Plan</h3>
+      <div class="prose max-w-none"><%= simple_format(@work_order.implementation_plan) %></div>
+    </div>
+  <% end %>
+</div>

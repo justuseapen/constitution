@@ -1,0 +1,14 @@
+<%= turbo_frame_tag "work_order_#{work_order.id}" do %>
+  <div id="work_order_<%= work_order.id %>" data-work-order-id="<%= work_order.id %>"
+       class="bg-white rounded p-3 shadow-sm border cursor-move">
+    <%= link_to project_work_order_path(work_order.project, work_order), class: "block" do %>
+      <p class="font-medium text-sm"><%= work_order.title %></p>
+      <div class="flex items-center gap-2 mt-2">
+        <span class="text-xs px-2 py-0.5 rounded bg-gray-200"><%= work_order.priority %></span>
+        <% if work_order.assignee %>
+          <span class="text-xs text-gray-500"><%= work_order.assignee.name %></span>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+<% end %>

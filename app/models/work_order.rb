@@ -20,4 +20,12 @@ class WorkOrder < ApplicationRecord
     high: 2,
     critical: 3
   }, default: :medium
+
+  after_update_commit -> {
+    broadcast_replace_to(
+      "project_#{project_id}_work_orders",
+      target: "work_order_#{id}",
+      partial: "work_orders/work_order_card"
+    )
+  }
 end

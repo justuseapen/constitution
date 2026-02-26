@@ -1,0 +1,21 @@
+<div class="p-6">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold">Work Orders</h1>
+    <%= link_to "New Work Order", new_project_work_order_path(@project), class: "px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700" %>
+  </div>
+
+  <div data-controller="kanban"
+       data-kanban-url-value="<%= project_work_order_path(@project, ':id') %>"
+       class="flex gap-4 overflow-x-auto">
+    <% %w[backlog todo in_progress review done].each do |status| %>
+      <div class="min-w-[280px] bg-gray-100 rounded p-3">
+        <h3 class="font-semibold mb-3 text-sm uppercase text-gray-600"><%= status.humanize %></h3>
+        <div data-kanban-target="column" data-status="<%= status %>" class="space-y-2 min-h-[100px]">
+          <% @work_orders.select { |wo| wo.status == status }.sort_by(&:position).each do |wo| %>
+            <%= render partial: "work_orders/work_order_card", locals: { work_order: wo } %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

@@ -12,3 +12,6 @@ application.register("tiptap", TiptapController)
 
 import MermaidController from "./mermaid_controller"
 application.register("mermaid", MermaidController)
+
+import KanbanController from "./kanban_controller"
+application.register("kanban", KanbanController)

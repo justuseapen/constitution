@@ -4,6 +4,7 @@ Rails.application.routes.draw do
   resources :projects do
     resources :documents
     resources :blueprints
+    resources :work_orders
   end
 
   root "projects#index"
