@@ -1,0 +1,14 @@
+<div class="flex h-[calc(100vh-4rem)]">
+  <div class="flex-1 p-8 overflow-y-auto">
+    <div class="max-w-3xl mx-auto">
+      <h1 class="text-2xl font-bold mb-6">Edit: <%= @blueprint.title %></h1>
+      <%= render "form", blueprint: @blueprint %>
+    </div>
+  </div>
+
+  <!-- Agent sidebar -->
+  <div class="w-96 border-l bg-gray-50 p-4 overflow-y-auto">
+    <h2 class="font-semibold mb-4">Foundry Agent</h2>
+    <p class="text-sm text-gray-500">Agent chat coming soon...</p>
+  </div>
+</div>

@@ -1,0 +1,47 @@
+<div class="flex h-[calc(100vh-4rem)]">
+  <!-- Main editor area -->
+  <div class="flex-1 p-8 overflow-y-auto">
+    <div class="max-w-3xl mx-auto">
+      <div class="mb-4">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="text-xs px-2 py-0.5 rounded bg-gray-200 text-gray-600 uppercase"><%= @blueprint.blueprint_type.humanize %></span>
+          <%= link_to "Edit", edit_project_blueprint_path(@project, @blueprint), class: "text-xs text-indigo-600 hover:underline" %>
+          <%= link_to "All Blueprints", project_blueprints_path(@project), class: "text-xs text-gray-500 hover:underline" %>
+          <% if @blueprint.document.present? %>
+            <%= link_to "Source Doc", project_document_path(@project, @blueprint.document), class: "text-xs text-green-600 hover:underline" %>
+          <% end %>
+        </div>
+        <h1 class="text-3xl font-bold"><%= @blueprint.title %></h1>
+        <p class="text-sm text-gray-500">
+          v<%= @blueprint.version %> &middot; by <%= @blueprint.updated_by&.name || @blueprint.created_by.name %>
+        </p>
+      </div>
+
+      <% if @blueprint.system_diagram? && @blueprint.body.present? %>
+        <!-- Mermaid diagram preview for system diagrams -->
+        <div class="mb-6 p-4 border rounded bg-white" data-controller="mermaid">
+          <h2 class="text-lg font-semibold mb-2">System Diagram</h2>
+          <div data-mermaid-target="source" class="hidden"><%= @blueprint.body %></div>
+          <div data-mermaid-target="preview" class="flex justify-center"></div>
+        </div>
+
+        <!-- Raw Mermaid code (collapsible) -->
+        <details class="mb-6">
+          <summary class="cursor-pointer text-sm font-medium text-gray-700 mb-2">View Mermaid Code</summary>
+          <pre class="bg-gray-50 p-4 rounded text-sm overflow-x-auto"><code><%= @blueprint.body %></code></pre>
+        </details>
+      <% else %>
+        <!-- Regular prose content for non-diagram blueprints -->
+        <div class="prose max-w-none">
+          <%= @blueprint.body&.html_safe %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Agent sidebar placeholder -->
+  <div class="w-96 border-l bg-gray-50 p-4 overflow-y-auto">
+    <h2 class="font-semibold mb-4">Foundry Agent</h2>
+    <p class="text-sm text-gray-500">Agent chat coming soon...</p>
+  </div>
+</div>

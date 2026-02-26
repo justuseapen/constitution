@@ -3,6 +3,7 @@ Rails.application.routes.draw do
 
   resources :projects do
     resources :documents
+    resources :blueprints
   end
 
   root "projects#index"

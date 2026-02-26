@@ -9,3 +9,6 @@ application.register("hello", HelloController)
 
 import TiptapController from "./tiptap_controller"
 application.register("tiptap", TiptapController)
+
+import MermaidController from "./mermaid_controller"
+application.register("mermaid", MermaidController)
