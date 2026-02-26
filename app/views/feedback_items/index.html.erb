@@ -1,0 +1,35 @@
+<div class="p-6">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold">Feedback Inbox</h1>
+  </div>
+
+  <div class="flex gap-2 mb-4">
+    <%= link_to "All", project_feedback_items_path(@project), class: "px-3 py-1 rounded text-sm #{params[:category].blank? ? 'bg-indigo-600 text-white' : 'bg-gray-200'}" %>
+    <% FeedbackItem.categories.keys.each do |cat| %>
+      <%= link_to cat.humanize, project_feedback_items_path(@project, category: cat), class: "px-3 py-1 rounded text-sm #{params[:category] == cat ? 'bg-indigo-600 text-white' : 'bg-gray-200'}" %>
+    <% end %>
+  </div>
+
+  <table class="w-full bg-white rounded shadow">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="text-left p-3 text-sm font-medium text-gray-600">Title</th>
+        <th class="text-left p-3 text-sm font-medium text-gray-600">Category</th>
+        <th class="text-left p-3 text-sm font-medium text-gray-600">Score</th>
+        <th class="text-left p-3 text-sm font-medium text-gray-600">Status</th>
+        <th class="text-left p-3 text-sm font-medium text-gray-600">Created</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @feedback_items.each do |item| %>
+        <tr class="border-t hover:bg-gray-50">
+          <td class="p-3"><%= link_to item.title, project_feedback_item_path(@project, item), class: "text-indigo-600 hover:underline" %></td>
+          <td class="p-3"><span class="text-xs px-2 py-1 rounded bg-blue-100"><%= item.category.humanize %></span></td>
+          <td class="p-3"><%= item.score || "-" %></td>
+          <td class="p-3"><span class="text-xs px-2 py-1 rounded bg-gray-100"><%= item.status.humanize %></span></td>
+          <td class="p-3 text-sm text-gray-500"><%= item.created_at.strftime("%b %d, %Y") %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

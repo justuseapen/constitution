@@ -5,6 +5,11 @@ Rails.application.routes.draw do
     resources :documents
     resources :blueprints
     resources :work_orders
+    resources :feedback_items, only: [:index, :show, :update] do
+      member do
+        post :create_work_order
+      end
+    end
   end
 
   resources :agent_chats, only: [:create]

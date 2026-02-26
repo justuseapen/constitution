@@ -1,0 +1,24 @@
+<div class="p-6 max-w-4xl">
+  <div class="flex justify-between items-center mb-4">
+    <h1 class="text-2xl font-bold"><%= @feedback_item.title %></h1>
+    <div class="flex gap-2">
+      <%= button_to "Create Work Order", create_work_order_project_feedback_item_path(@project, @feedback_item), method: :post, class: "px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 text-sm" %>
+      <%= link_to "Back to Inbox", project_feedback_items_path(@project), class: "px-3 py-1 border rounded text-sm" %>
+    </div>
+  </div>
+
+  <div class="flex gap-2 mb-4">
+    <span class="px-2 py-1 rounded text-xs font-medium bg-blue-100"><%= @feedback_item.category.humanize %></span>
+    <span class="px-2 py-1 rounded text-xs font-medium bg-gray-100"><%= @feedback_item.status.humanize %></span>
+    <% if @feedback_item.score %>
+      <span class="px-2 py-1 rounded text-xs font-medium bg-yellow-100">Score: <%= @feedback_item.score %></span>
+    <% end %>
+  </div>
+
+  <div class="prose max-w-none mb-6"><%= simple_format(@feedback_item.body) %></div>
+
+  <% if @feedback_item.technical_context.present? %>
+    <h3 class="text-lg font-semibold mb-2">Technical Context</h3>
+    <pre class="bg-gray-50 p-4 rounded text-sm overflow-auto"><%= JSON.pretty_generate(@feedback_item.technical_context) %></pre>
+  <% end %>
+</div>
