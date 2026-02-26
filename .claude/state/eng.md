@@ -1,7 +1,7 @@
 # Engineering State - Constitution
 
 ## Last Updated
-2026-02-26T16:05:00Z
+2026-02-26T17:30:00Z
 
 ## Current Sprint Goal
 Initialize Rails 8 application with Docker Compose infrastructure (Postgres, Neo4j, Redis) and core gems
@@ -19,6 +19,7 @@ Initialize Rails 8 application with Docker Compose infrastructure (Postgres, Neo
 | Auto-Generate Placeholder Docs | Complete | master | Project creation now seeds Product Overview & Technical Requirements docs |
 | Blueprint & BlueprintVersion Models | Complete | master | Blueprint system with Mermaid diagram support |
 | Phase & WorkOrder Models | Complete | master | Planner data layer with phases and work orders |
+| WorkOrders Kanban Board | Complete | master | Full kanban UI with drag-and-drop via Sortable.js |
 
 ## Blockers
 - [ ] _None yet_
@@ -42,34 +43,39 @@ Initialize Rails 8 application with Docker Compose infrastructure (Postgres, Neo
 - ruby-openai for OpenRouter integration (OpenAI-compatible API)
 
 ## Context for Next Session
-Task 10 complete: Phase and WorkOrder models implemented.
+Task 11 complete: WorkOrders Kanban Board with drag-and-drop implemented.
 
-Key files created:
-- **Models:** `app/models/phase.rb`, `app/models/work_order.rb`
-- **Migrations:** `db/migrate/20260226160000_create_phases.rb`, `db/migrate/20260226160001_create_work_orders.rb`
-- **Specs:** `spec/models/phase_spec.rb`, `spec/models/work_order_spec.rb`
-- **Factories:** `spec/factories/phases.rb`, `spec/factories/work_orders.rb`
+Key files created/modified:
+- **Controller:** `app/controllers/work_orders_controller.rb`
+- **Views:** `app/views/work_orders/index.html.erb` (kanban board), `show.html.erb`, `new.html.erb`, `edit.html.erb`, `_form.html.erb`, `_work_order_card.html.erb`
+- **JavaScript:** `app/javascript/controllers/kanban_controller.js` (Sortable.js integration)
+- **Specs:** `spec/requests/work_orders_spec.rb`
+- **Routes:** Added `resources :work_orders` nested under projects
+- **Dependencies:** Added `sortablejs` to `package.json`
+- **Model:** Updated `app/models/work_order.rb` with Turbo Stream broadcast callback
 
-Commit: 9a67471 "feat: add Phase and WorkOrder models"
+Commit: 3ec60f7 "feat: add kanban board with drag-and-drop via Sortable.js + Turbo"
 
 Features implemented:
-- **Phase model** - Organizes work orders into sequential phases with position ordering
-- **WorkOrder model** - Traceable task units with status, priority, acceptance criteria, and implementation plans
-- **Associations** - Phase has_many work_orders (nullify on delete), WorkOrder belongs_to phase (optional), project, assignee (User)
-- **Polymorphic comments** - WorkOrder is commentable via existing Comment model
-- **Status enum** - backlog (0), todo (1), in_progress (2), review (3), done (4)
-- **Priority enum** - low (0), medium (1), high (2), critical (3)
-- **Position fields** - Both Phase and WorkOrder have position for drag-and-drop ordering
-- **AI-ready fields** - acceptance_criteria, implementation_plan for AI-generated content
-- **Full test coverage** - Model specs with shoulda-matchers, factories with Faker data
+- **Kanban board** - Visual board with 5 status columns (backlog, todo, in_progress, review, done)
+- **Drag-and-drop** - Sortable.js integration allows dragging work orders between columns
+- **Real-time updates** - Turbo Stream broadcasts update cards after changes
+- **Full CRUD** - Create, read, update, delete work orders with proper scoping to project and team
+- **Work order form** - Complete form with title, status, priority, phase, assignee, description, acceptance criteria, implementation plan
+- **Work order card** - Compact card showing title, priority badge, assignee name
+- **Show view** - Detailed view with all work order fields formatted
+- **JSON API** - Controller responds to JSON for drag-and-drop PATCH requests
+- **Request specs** - Full coverage including HTML and JSON responses
 
 Implementation details:
-- Phase has default_scope ordering by position
-- WorkOrder assignee_id references users table with optional FK
-- Indexes on work_orders: assignee_id, status, priority for query optimization
-- Phase deletion nullifies work_orders (they can exist without a phase)
-- Both models validate presence of key fields (name for Phase, title for WorkOrder)
+- Controller follows DocumentsController pattern (authenticate_user!, set_project scoping to current_user.team)
+- Kanban Stimulus controller creates Sortable instances for each column with shared group "kanban"
+- On drag end, controller sends PATCH request with new status and position
+- Turbo Stream callback broadcasts to "project_{id}_work_orders" stream
+- Views use Tailwind CSS for styling, consistent with existing views
+- Form includes collection_select for phases and assignees from current project/team
+- Request specs test all CRUD operations plus JSON PATCH for drag-and-drop
 
-Note: Database is NOT running locally, so migrations have not been applied yet. Specs cannot run until database is running and migrations are applied.
+Note: Database is NOT running locally, so specs cannot be executed yet. All syntax has been validated. Need to run `npm install` to install sortablejs dependency.
 
-Ready for next task: WorkOrders controller and Kanban UI.
+Ready for next task: Can now build on the Planner module (e.g., AI-powered work order generation, phase management UI, etc.).

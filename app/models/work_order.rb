@@ -1,4 +1,6 @@
 class WorkOrder < ApplicationRecord
+  include GraphSync
+
   belongs_to :project
   belongs_to :phase, optional: true
   belongs_to :assignee, class_name: "User", optional: true

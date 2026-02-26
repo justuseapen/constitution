@@ -1,4 +1,6 @@
 class Blueprint < ApplicationRecord
+  include GraphSync
+
   belongs_to :project
   belongs_to :document, optional: true
   belongs_to :created_by, class_name: "User"
