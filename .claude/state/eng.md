@@ -1,7 +1,7 @@
 # Engineering State - Constitution
 
 ## Last Updated
-2026-02-26T14:15:00Z
+2026-02-26T14:36:00Z
 
 ## Current Sprint Goal
 Initialize Rails 8 application with Docker Compose infrastructure (Postgres, Neo4j, Redis) and core gems
@@ -15,6 +15,8 @@ Initialize Rails 8 application with Docker Compose infrastructure (Postgres, Neo
 | Project Model & CRUD | Complete | master | Project model with full CRUD, team-scoped |
 | Document & DocumentVersion Models | Complete | master | Document versioning system with snapshots |
 | Polymorphic Comment Model | Complete | master | Comment model for Documents, Blueprints, WorkOrders |
+| Documents Controller & Views with Tiptap | Complete | master | Full CRUD with rich text editor integration |
+| Auto-Generate Placeholder Docs | Complete | master | Project creation now seeds Product Overview & Technical Requirements docs |
 
 ## Blockers
 - [ ] _None yet_
@@ -38,26 +40,27 @@ Initialize Rails 8 application with Docker Compose infrastructure (Postgres, Neo
 - ruby-openai for OpenRouter integration (OpenAI-compatible API)
 
 ## Context for Next Session
-Task 6 complete: Polymorphic Comment model implemented.
+Task 8 complete: Auto-Generate Placeholder Docs on Project Creation implemented.
 
-Key files created:
-- `app/models/comment.rb` - Comment model with polymorphic belongs_to :commentable, belongs_to :user; validates :body presence
-- `db/migrate/20260226141114_create_comments.rb` - Comments migration with polymorphic commentable_id/commentable_type, user_id FK, body text, resolved boolean (default: false)
-- `spec/models/comment_spec.rb` - Comment model specs with Shoulda matchers and polymorphic association test
-- `spec/factories/comments.rb` - Comment factory with Faker, defaults commentable to Document
+Key files modified:
+- `app/models/project.rb` - Added `self.seed_documents(project, user)` class method that creates two placeholder documents
+- `app/controllers/projects_controller.rb` - Added `Project.seed_documents(@project, current_user)` call after successful project save
+- `spec/models/project_spec.rb` - Added comprehensive specs for the seed_documents method
 
-Model relationships:
-- Comment belongs_to :commentable (polymorphic), :user
-- Document has_many :comments (already configured from Task 5)
+Commit: 43d44cb "feat: auto-generate placeholder docs on project creation"
 
-Commit: d7c6c8b "feat: add polymorphic Comment model"
+Features implemented:
+- When a new project is created, two placeholder documents are auto-generated:
+  1. **Product Overview** (document_type: product_overview) with sections: Business Problem, Target Users, Success Criteria
+  2. **Technical Requirements** (document_type: technical_requirement) with sections: Authentication & Authorization, Performance, Security
+- Documents are created with proper HTML structure using `<h2>` headers and empty `<p>` tags for content
+- Both documents are attributed to the creating user via `created_by` association
+- Full test coverage for the seed_documents method including document count, titles, content, and associations
 
-Comment model features:
-- Polymorphic commentable (can attach to Documents, Blueprints, WorkOrders)
-- Required body text field
-- resolved boolean flag (default: false) for tracking comment resolution
-- User association for comment author
-- Fully tested with RSpec and FactoryBot
+Implementation notes:
+- Used class method `Project.seed_documents(project, user)` for better testability and separation of concerns
+- HTML ampersand properly escaped as `&amp;` in "Authentication & Authorization" section
+- Specs verify both documents are created with correct type, title, body content, and user attribution
 
 Note: Database is NOT running, so migrations have not been applied yet. Specs cannot run until database is running and migrations are applied.
 
