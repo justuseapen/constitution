@@ -22,4 +22,39 @@ RSpec.describe "AgentChats", type: :request do
       expect(AgentConversation.count).to eq(1)
     end
   end
+
+  describe "GET /agent_chats" do
+    it "returns conversation messages for a conversable" do
+      conversation = AgentConversation.create!(
+        conversable: document, user: user,
+        model_provider: "openrouter", model_name: "test"
+      )
+      conversation.messages.create!(role: "user", content: "Hello")
+      conversation.messages.create!(role: "assistant", content: "Hi there")
+
+      get agent_chats_path, params: {
+        conversable_type: "Document",
+        conversable_id: document.id
+      }, as: :json
+
+      expect(response).to have_http_status(:ok)
+      json = JSON.parse(response.body)
+      expect(json["messages"].length).to eq(2)
+      expect(json["messages"][0]["role"]).to eq("user")
+      expect(json["messages"][0]["content"]).to eq("Hello")
+      expect(json["messages"][1]["role"]).to eq("assistant")
+      expect(json["messages"][1]["content"]).to eq("Hi there")
+    end
+
+    it "returns empty messages when no conversation exists" do
+      get agent_chats_path, params: {
+        conversable_type: "Document",
+        conversable_id: document.id
+      }, as: :json
+
+      expect(response).to have_http_status(:ok)
+      json = JSON.parse(response.body)
+      expect(json["messages"]).to eq([])
+    end
+  end
 end

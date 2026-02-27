@@ -1,6 +1,24 @@
 class AgentChatsController < ApplicationController
   before_action :authenticate_user!
 
+  def index
+    conversation = AgentConversation.find_by(
+      conversable_type: params[:conversable_type],
+      conversable_id: params[:conversable_id],
+      user: current_user
+    )
+
+    messages = if conversation
+      conversation.messages.where.not(role: "system").order(:created_at).map do |m|
+        { role: m.role, content: m.content, created_at: m.created_at }
+      end
+    else
+      []
+    end
+
+    render json: { messages: messages }
+  end
+
   def create
     conversable = params[:conversable_type].constantize.find(params[:conversable_id])
     conversation = AgentConversation.find_or_create_by!(

@@ -12,7 +12,7 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :agent_chats, only: [:create]
+  resources :agent_chats, only: [:index, :create]
 
   resources :systems
 
