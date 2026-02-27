@@ -1,6 +1,6 @@
 <header class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between flex-shrink-0">
   <div class="flex items-center gap-4">
-    <% if @project %>
+    <% if @project&.persisted? %>
       <%= link_to @project.name, project_path(@project), class: "text-sm font-medium text-gray-700 hover:text-indigo-600" %>
       <% if content_for?(:page_title) %>
         <span class="text-gray-400">/</span>

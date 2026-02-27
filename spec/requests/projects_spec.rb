@@ -21,6 +21,21 @@ RSpec.describe "Projects", type: :request do
     end
   end
 
+  describe "GET /projects/new" do
+    it "returns http success" do
+      get new_project_path
+      expect(response).to have_http_status(:success)
+    end
+  end
+
+  describe "GET /projects/:id" do
+    it "returns http success" do
+      project = create(:project, team: team)
+      get project_path(project)
+      expect(response).to have_http_status(:success)
+    end
+  end
+
   describe "POST /projects" do
     it "creates a project for the current team" do
       expect {
