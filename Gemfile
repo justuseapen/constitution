@@ -81,6 +81,10 @@ gem "pundit", "~> 2.3"
 # Serialization
 gem "oj", "~> 3.16"
 
+# Document parsing
+gem "docx", "~> 0.8"
+gem "pdf-reader", "~> 2.12"
+
 # Testing
 group :development, :test do
   gem "rspec-rails", "~> 7.0"
