@@ -1,10 +1,148 @@
-<div class="max-w-4xl mx-auto py-8">
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold"><%= @project.name %></h1>
-    <div class="space-x-2">
-      <%= link_to "Edit", edit_project_path(@project), class: "px-3 py-1 border rounded hover:bg-gray-50" %>
-      <%= link_to "Back", projects_path, class: "px-3 py-1 border rounded hover:bg-gray-50" %>
+<% content_for(:page_title, "Dashboard") %>
+
+<div class="space-y-6">
+  <!-- Project Header -->
+  <div class="flex justify-between items-start">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900"><%= @project.name %></h1>
+      <p class="text-gray-500 mt-1"><%= @project.description %></p>
+    </div>
+    <div class="flex gap-2">
+      <%= link_to "Edit", edit_project_path(@project), class: "px-3 py-1.5 text-sm border rounded-lg hover:bg-gray-50" %>
+      <span class="px-3 py-1.5 text-sm rounded-lg <%= @project.active? ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' %>">
+        <%= @project.status.humanize %>
+      </span>
     </div>
   </div>
-  <p class="text-gray-600"><%= @project.description %></p>
+
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="bg-white rounded-lg border p-4">
+      <p class="text-sm text-gray-500">Documents</p>
+      <p class="text-2xl font-bold text-gray-900"><%= @project.documents.count %></p>
+    </div>
+    <div class="bg-white rounded-lg border p-4">
+      <p class="text-sm text-gray-500">Blueprints</p>
+      <p class="text-2xl font-bold text-gray-900"><%= @project.blueprints.count %></p>
+    </div>
+    <div class="bg-white rounded-lg border p-4">
+      <p class="text-sm text-gray-500">Open Work Orders</p>
+      <p class="text-2xl font-bold text-gray-900"><%= @project.work_orders.where.not(status: :done).count %></p>
+    </div>
+    <div class="bg-white rounded-lg border p-4">
+      <p class="text-sm text-gray-500">Drift Alerts</p>
+      <p class="text-2xl font-bold <%= @project.drift_alerts.where(status: :open).any? ? 'text-amber-600' : 'text-gray-900' %>">
+        <%= @project.drift_alerts.where(status: :open).count %>
+      </p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Active Drift Alerts -->
+    <div class="bg-white rounded-lg border">
+      <div class="px-4 py-3 border-b">
+        <h2 class="font-semibold text-gray-900">Active Drift Alerts</h2>
+      </div>
+      <div class="p-4">
+        <% alerts = @project.drift_alerts.where(status: :open).order(created_at: :desc).limit(5) %>
+        <% if alerts.any? %>
+          <div class="space-y-3">
+            <% alerts.each do |alert| %>
+              <div class="flex items-start gap-3 p-3 bg-amber-50 rounded-lg">
+                <svg class="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+                <div>
+                  <p class="text-sm text-gray-700"><%= alert.message %></p>
+                  <p class="text-xs text-gray-400 mt-1"><%= time_ago_in_words(alert.created_at) %> ago</p>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="text-sm text-gray-400">No active drift alerts</p>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Work Order Summary -->
+    <div class="bg-white rounded-lg border">
+      <div class="px-4 py-3 border-b">
+        <h2 class="font-semibold text-gray-900">Work Orders by Status</h2>
+      </div>
+      <div class="p-4 space-y-3">
+        <% WorkOrder.statuses.keys.each do |status| %>
+          <% count = @project.work_orders.where(status: status).count %>
+          <div class="flex items-center justify-between">
+            <span class="text-sm text-gray-600 capitalize"><%= status.humanize %></span>
+            <div class="flex items-center gap-2">
+              <div class="w-32 bg-gray-100 rounded-full h-2">
+                <% total = @project.work_orders.count %>
+                <% pct = total > 0 ? (count.to_f / total * 100).round : 0 %>
+                <div class="bg-indigo-500 h-2 rounded-full" style="width: <%= pct %>%"></div>
+              </div>
+              <span class="text-sm font-medium text-gray-900 w-8 text-right"><%= count %></span>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Recent Documents -->
+    <div class="bg-white rounded-lg border">
+      <div class="px-4 py-3 border-b flex justify-between items-center">
+        <h2 class="font-semibold text-gray-900">Recent Documents</h2>
+        <%= link_to "View All", project_documents_path(@project), class: "text-sm text-indigo-600 hover:text-indigo-700" %>
+      </div>
+      <div class="divide-y">
+        <% @project.documents.order(updated_at: :desc).limit(5).each do |doc| %>
+          <%= link_to project_document_path(@project, doc), class: "block px-4 py-3 hover:bg-gray-50" do %>
+            <p class="text-sm font-medium text-gray-900"><%= doc.title %></p>
+            <p class="text-xs text-gray-400 mt-1"><%= doc.document_type.humanize %> &middot; Updated <%= time_ago_in_words(doc.updated_at) %> ago</p>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Recent Feedback -->
+    <div class="bg-white rounded-lg border">
+      <div class="px-4 py-3 border-b flex justify-between items-center">
+        <h2 class="font-semibold text-gray-900">Recent Feedback</h2>
+        <%= link_to "View Inbox", project_feedback_items_path(@project), class: "text-sm text-indigo-600 hover:text-indigo-700" %>
+      </div>
+      <div class="divide-y">
+        <% @project.feedback_items.order(created_at: :desc).limit(5).each do |item| %>
+          <%= link_to project_feedback_item_path(@project, item), class: "block px-4 py-3 hover:bg-gray-50" do %>
+            <div class="flex items-center gap-2">
+              <span class="inline-block w-2 h-2 rounded-full <%= item.bug? ? 'bg-red-400' : item.feature_request? ? 'bg-blue-400' : 'bg-gray-400' %>"></span>
+              <p class="text-sm font-medium text-gray-900"><%= item.title %></p>
+            </div>
+            <p class="text-xs text-gray-400 mt-1"><%= item.category.humanize %> &middot; <%= item.status.humanize %> &middot; <%= time_ago_in_words(item.created_at) %> ago</p>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Linked Systems -->
+    <div class="bg-white rounded-lg border lg:col-span-2">
+      <div class="px-4 py-3 border-b flex justify-between items-center">
+        <h2 class="font-semibold text-gray-900">Linked Systems</h2>
+        <%= link_to "System Map", systems_path, class: "text-sm text-indigo-600 hover:text-indigo-700" %>
+      </div>
+      <div class="p-4">
+        <% systems = current_user.team.service_systems.limit(10) %>
+        <% if systems.any? %>
+          <div class="flex flex-wrap gap-2">
+            <% systems.each do |sys| %>
+              <%= link_to system_path(sys), class: "inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm" do %>
+                <span class="w-2 h-2 rounded-full <%= sys.service? ? 'bg-blue-400' : sys.database? ? 'bg-green-400' : sys.queue? ? 'bg-purple-400' : 'bg-gray-400' %>"></span>
+                <%= sys.name %>
+                <span class="text-xs text-gray-400"><%= sys.system_type.humanize %></span>
+              <% end %>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="text-sm text-gray-400">No systems linked yet</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
 </div>
