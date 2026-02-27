@@ -29,7 +29,7 @@
       <p class="text-sm text-gray-500">Open Work Orders</p>
       <p class="text-2xl font-bold text-gray-900"><%= @project.work_orders.where.not(status: :done).count %></p>
     </div>
-    <div class="bg-white rounded-lg border p-4">
+    <div class="bg-white rounded-lg border p-4" title="Drift alerts flag when a document, blueprint, or work order has changed but its downstream artifacts haven't been updated yet.">
       <p class="text-sm text-gray-500">Drift Alerts</p>
       <p class="text-2xl font-bold <%= @project.drift_alerts.where(status: :open).any? ? 'text-amber-600' : 'text-gray-900' %>">
         <%= @project.drift_alerts.where(status: :open).count %>
@@ -37,11 +37,58 @@
     </div>
   </div>
 
+  <!-- Repositories -->
+  <div class="bg-white rounded-lg border">
+    <div class="px-4 py-3 border-b flex justify-between items-center">
+      <h2 class="font-semibold text-gray-900">Repositories</h2>
+    </div>
+    <div class="p-4">
+      <% repos = current_user.team.service_systems.joins(:repositories).includes(:repositories).flat_map(&:repositories) %>
+      <% if repos.any? %>
+        <div class="space-y-2 mb-4">
+          <% repos.each do |repo| %>
+            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div class="flex items-center gap-3">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5"/></svg>
+                <div>
+                  <p class="text-sm font-medium text-gray-900"><%= repo.name %></p>
+                  <p class="text-xs text-gray-400"><%= repo.url %></p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <% if repo.failed? %>
+                  <%= button_to "Retry", retry_index_project_repository_path(@project, repo), method: :post, class: "text-xs px-2 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 cursor-pointer" %>
+                <% end %>
+                <span class="text-xs px-2 py-1 rounded-full
+                  <%= case repo.indexing_status
+                      when 'indexed' then 'bg-green-100 text-green-700'
+                      when 'indexing' then 'bg-blue-100 text-blue-700'
+                      when 'failed' then 'bg-red-100 text-red-700'
+                      else 'bg-gray-100 text-gray-600'
+                      end %>">
+                  <%= repo.indexing_status.humanize %>
+                </span>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+
+      <%= form_with url: project_repositories_path(@project), method: :post, class: "flex gap-2" do |f| %>
+        <%= f.text_field :repository_url,
+            placeholder: "https://github.com/org/repo.git",
+            class: "flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none" %>
+        <%= f.submit "Connect Repository",
+            class: "px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 cursor-pointer" %>
+      <% end %>
+    </div>
+  </div>
+
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <!-- Active Drift Alerts -->
     <div class="bg-white rounded-lg border">
       <div class="px-4 py-3 border-b">
-        <h2 class="font-semibold text-gray-900">Active Drift Alerts</h2>
+        <h2 class="font-semibold text-gray-900" title="Upstream artifacts changed but downstream artifacts haven't been updated yet.">Active Drift Alerts</h2>
       </div>
       <div class="p-4">
         <% alerts = @project.drift_alerts.where(status: :open).order(created_at: :desc).limit(5) %>
