@@ -1,33 +1,68 @@
-<div class="w-80 border-l bg-gray-50 flex flex-col h-full"
+<div class="w-[400px] border-l bg-gray-50 flex flex-col h-full relative"
      data-controller="agent-chat"
+     data-agent-chat-target="sidebar"
      data-agent-chat-conversable-type-value="<%= conversable_type %>"
      data-agent-chat-conversable-id-value="<%= conversable_id %>"
      data-agent-chat-url-value="<%= agent_chats_path(conversable_type: conversable_type, conversable_id: conversable_id) %>">
 
-  <div class="p-3 border-b bg-white">
-    <h3 class="font-semibold text-sm">AI Agent</h3>
-    <p class="text-xs text-gray-500">Ask questions about this artifact</p>
+  <%# Resize handle %>
+  <div data-agent-chat-target="resizer"
+       class="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-indigo-400 active:bg-indigo-500 z-10"></div>
+
+  <%# Header %>
+  <div class="p-4 border-b bg-white flex items-center gap-2">
+    <div class="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0">
+      <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+      </svg>
+    </div>
+    <div>
+      <h3 class="font-semibold text-sm text-gray-900">AI Agent</h3>
+      <p class="text-xs text-gray-500">Ask questions about this artifact</p>
+    </div>
   </div>
 
-  <div data-agent-chat-target="messages" class="flex-1 overflow-y-auto p-3 space-y-2">
-    <!-- Messages appear here -->
+  <%# Messages area %>
+  <div data-agent-chat-target="messages"
+       class="flex-1 overflow-y-auto p-4 space-y-1"
+       style="scroll-behavior: smooth;">
   </div>
 
-  <div data-agent-chat-target="response" class="p-3 text-sm text-gray-600 italic min-h-0">
-    <!-- Streaming response appears here -->
+  <%# Loading indicator %>
+  <div data-agent-chat-target="loading" class="hidden px-4 pb-2">
+    <div class="flex items-center gap-2 text-gray-400 text-sm">
+      <div class="flex gap-1">
+        <span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+        <span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+        <span class="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+      </div>
+      <span>Thinking...</span>
+    </div>
   </div>
 
+  <%# Streaming response area %>
+  <div data-agent-chat-target="responseWrapper" class="hidden px-4 pb-2">
+    <div class="flex justify-start mb-3">
+      <div data-agent-chat-target="response"
+           class="max-w-[85%] px-4 py-3 rounded-2xl rounded-bl-sm bg-white border border-gray-200 text-gray-800 text-sm prose prose-sm max-w-none">
+      </div>
+    </div>
+  </div>
+
+  <%# Input area %>
   <div class="p-3 border-t bg-white">
-    <div class="flex gap-2">
-      <input data-agent-chat-target="input"
-             type="text"
-             placeholder="Ask the agent..."
-             class="flex-1 border rounded px-3 py-2 text-sm"
-             data-action="keydown.enter->agent-chat#send">
+    <div class="flex gap-2 items-end">
+      <textarea data-agent-chat-target="input"
+                placeholder="Ask the agent..."
+                rows="1"
+                class="flex-1 border border-gray-300 rounded-xl px-4 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                data-action="keydown->agent-chat#handleKeydown"
+                oninput="this.style.height='auto'; this.style.height=Math.min(this.scrollHeight, 120)+'px'"></textarea>
       <button data-action="click->agent-chat#send"
-              class="px-3 py-2 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700">
+              class="px-4 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors flex-shrink-0">
         Send
       </button>
     </div>
+    <p class="text-xs text-gray-400 mt-1.5 text-center">Shift+Enter for new line</p>
   </div>
 </div>
