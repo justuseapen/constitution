@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+require_relative "../app/mcp/constitution_mcp_server"
+
+ConstitutionMcpServer.new.run
