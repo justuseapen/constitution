@@ -1,7 +1,7 @@
 # Engineering State - Constitution
 
 ## Last Updated
-2026-02-26T18:25:00Z
+2026-02-27T00:00:00Z
 
 ## Current Sprint Goal
 Initialize Rails 8 application with Docker Compose infrastructure (Postgres, Neo4j, Redis) and core gems
@@ -32,6 +32,7 @@ Initialize Rails 8 application with Docker Compose infrastructure (Postgres, Neo
 | Notification Center UI | Complete | master | Bell icon dropdown with real-time notification updates |
 | Repository Model & Indexing Pipeline | Complete | master | Codebase indexing with pgvector embeddings and semantic artifact extraction |
 | MCP Server Implementation | Complete | master | Model Context Protocol server for IDE integration with 8 tools and 4 resources |
+| Project Importers (Git, Jira, Document Upload) | Complete | master | Three importers with AI-powered requirement generation |
 
 ## Blockers
 - [ ] _None yet_
@@ -382,8 +383,150 @@ Technical decisions:
 - Submitted_by_email enables user follow-up without full user accounts
 
 ## Context for Next Session
-Task 24 complete: MCP Server Implementation.
+Tasks 25-27 complete: Project Importers (Git, Jira, Document Upload).
 
+Key files created/modified:
+- **Services:**
+  - `app/services/importers/git_importer.rb` - Git repository importer with auto service system creation
+  - `app/services/importers/jira_importer.rb` - Jira REST API importer with status/priority mapping
+  - `app/services/importers/document_importer.rb` - Document upload importer (.md, .docx, .pdf)
+
+- **Jobs:**
+  - `app/jobs/git_import_job.rb` - Orchestrates Git import and requirement generation
+  - `app/jobs/jira_import_job.rb` - Orchestrates Jira import
+  - `app/jobs/generate_requirements_job.rb` - AI-powered requirement generation from code artifacts
+
+- **Migration:**
+  - `db/migrate/20260227000000_add_metadata_to_work_orders.rb` - Adds metadata jsonb column to work_orders
+
+- **Specs:**
+  - `spec/services/importers/git_importer_spec.rb` - Tests repository creation and indexing trigger
+  - `spec/services/importers/jira_importer_spec.rb` - Tests Jira API integration with webmock
+  - `spec/services/importers/document_importer_spec.rb` - Tests markdown and plain text parsing
+  - `spec/jobs/git_import_job_spec.rb` - Tests job queue name
+
+- **Gemfile:**
+  - Added `docx ~> 0.8` for DOCX parsing
+  - Added `pdf-reader ~> 2.12` for PDF parsing
+
+Commit: 2e4e72f "feat: add project importers (git, jira, document upload)"
+
+Features implemented:
+
+**Task 25: Git Repository Import**
+- **GitImporter Service:**
+  - Accepts project, user, url, and optional service_system
+  - Extracts repo name from URL (strips .git extension)
+  - Creates Repository record with name, url, default_branch
+  - Auto-creates ServiceSystem if none provided (uses repo name, type: service)
+  - Triggers CodebaseIndexJob for background indexing
+  - Returns created repository
+
+- **GitImportJob:**
+  - Orchestrates git import via GitImporter
+  - After repository creation, enqueues GenerateRequirementsJob
+  - Passes project_id, user_id, repository_id to next job
+
+- **GenerateRequirementsJob:**
+  - Waits for indexing to complete (requeues if repository.indexing?)
+  - Fetches up to 100 codebase_files with extracted_artifacts
+  - Builds artifact summary grouped by artifact_type (routes, controllers, models, etc)
+  - Uses OPENROUTER_CLIENT with Claude Sonnet 4.5 to generate documents
+  - Creates/updates two documents:
+    - "Product Overview (Auto-Generated)" (document_type: product_overview)
+    - "Technical Requirements (Auto-Generated)" (document_type: technical_requirement)
+  - Prompt asks AI to convert code artifacts into structured HTML documents
+  - Finds existing documents by title and updates them (or creates new)
+
+**Task 26: Jira Import**
+- **JiraImporter Service:**
+  - Accepts project, user, jira_url, jira_email, jira_token, jira_project_key
+  - Uses Net::HTTP with Basic Auth for Jira REST API v3
+  - Fetches all issues via /rest/api/3/search with pagination (50 per page)
+  - JQL: "project=#{key} ORDER BY created ASC"
+  - Fields: summary, description, status, priority, issuetype, parent, assignee, created, updated
+  - Creates Phases from Epics (phase.name = epic.summary, positioned by index)
+  - Creates WorkOrders from non-Epic issues (Stories, Tasks, Bugs)
+  - Maps Jira status to WorkOrder status enum via JIRA_STATUS_MAP
+  - Maps Jira priority to WorkOrder priority enum via JIRA_PRIORITY_MAP
+  - Extracts text from Atlassian Document Format (ADF) JSON via recursive tree traversal
+  - Stores Jira metadata in WorkOrder.metadata jsonb field (jira_key, jira_url)
+  - Uses find_or_create_by on title to prevent duplicates
+  - Assigns WorkOrders to parent Epic's phase (or default "Imported from Jira" phase)
+
+- **JiraImportJob:**
+  - Simple wrapper around JiraImporter
+  - Queued on :default queue
+
+- **Status Mapping:**
+  - "To Do" → :todo
+  - "In Progress" → :in_progress
+  - "In Review" → :review
+  - "Done" → :done
+  - "Backlog" → :backlog (default)
+  - Uses case-insensitive substring matching for flexible status names
+
+- **Priority Mapping:**
+  - "Highest" → :critical
+  - "High" → :high
+  - "Medium" → :medium (default)
+  - "Low" → :low
+  - "Lowest" → :low
+
+**Task 27: Document Upload Import**
+- **DocumentImporter Service:**
+  - Accepts project, user, file (UploadedFile or File), document_type (default: feature_requirement)
+  - Detects file type from content_type and extension
+  - Extracts title from filename (strips extension, titleizes)
+  - Converts content to HTML based on type:
+    - Markdown: Simple regex-based conversion (headings, bold, italic, lists)
+    - Plain text: Wraps in <p> tags, converts double newlines to paragraphs
+    - DOCX: Uses docx gem to extract paragraphs, escapes HTML
+    - PDF: Uses pdf-reader gem to extract text page-by-page, adds <hr> between pages
+  - Creates Document record with title, body (HTML), document_type, created_by
+  - Optional AI restructuring for long documents (>500 chars) via Claude Haiku 4.5
+  - AI prompt: "Restructure this into a well-organized [type] document with proper HTML headings"
+  - Handles both UploadedFile (from form) and File (from path) via respond_to? checks
+  - Gracefully degrades if docx or pdf-reader gems not loaded (returns error message in HTML)
+
+- **Markdown Conversion:**
+  - Basic regex replacements (not full CommonMark spec)
+  - Supports: h1-h3, bold (**), italic (*), unordered lists (-), ordered lists (1.)
+  - Double newlines become paragraph breaks
+
+- **AI Structuring:**
+  - Only runs if OPENROUTER_CLIENT defined and content > 500 chars
+  - Uses Claude Haiku 4.5 for cost efficiency
+  - Truncates content to 6000 chars before sending to AI
+  - Rescues errors and logs warning (doesn't fail import)
+  - Updates document.body with structured HTML if successful
+
+Implementation notes:
+- Database NOT running - all syntax validated with ruby -c
+- All specs created but not executed (require database)
+- Net::HTTP used for Jira API (no external HTTP gem dependency)
+- JiraImporter handles pagination automatically until all issues fetched
+- GitImporter uses detect_default_branch method (currently hardcoded to "main")
+- DocumentImporter detects type from both content_type header and file extension (fallback)
+- Metadata column on work_orders enables storing arbitrary import metadata (Jira key, Linear ID, etc)
+- All three importers designed to be idempotent (find_or_create_by prevents duplicates)
+
+Technical decisions:
+- Git import triggers AI requirement generation automatically (reverse-engineer from code)
+- Jira import creates phase structure from Epics (preserves project organization)
+- Document import supports multiple formats (no need for manual conversion)
+- Metadata stored as JSONB for flexibility (can add custom fields per importer)
+- AI structuring optional and fault-tolerant (doesn't block import on API failures)
+- Simple markdown conversion (no external gem dependency, fast for basic docs)
+- Jira ADF extraction via recursive tree traversal (handles nested content)
+- Status/priority mapping uses constants for easy customization per team
+- Find_or_create_by on title prevents duplicate imports (re-running is safe)
+- GenerateRequirementsJob requeues if indexing incomplete (eventual consistency)
+- Artifact summary limits to 20 per type (prevents prompt overflow)
+
+Ready for next task: Project import infrastructure complete. Can now build UI controllers/views for triggering imports, or add Linear/GitHub Issues importers using same pattern.
+
+Previous context (MCP Server):
 Key files created/modified:
 - **MCP Server:**
   - `app/mcp/constitution_mcp_server.rb` - Main server handling JSON-RPC over stdio
