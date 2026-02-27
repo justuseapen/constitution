@@ -17,8 +17,10 @@
     "@tiptap/pm": "^3.20.0",
     "@tiptap/starter-kit": "^3.20.0",
     "d3": "^7.9.0",
+    "highlight.js": "^11.11.1",
     "mermaid": "^11.4.1",
     "sortablejs": "^1.15.0",
+    "streaming-markdown": "^0.2.15",
     "tailwindcss": "^4.2.1"
   }
 }
