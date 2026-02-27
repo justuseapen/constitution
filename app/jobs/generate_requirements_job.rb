@@ -6,7 +6,6 @@ class GenerateRequirementsJob < ApplicationJob
     user = User.find(user_id)
     repository = Repository.find(repository_id)
 
-    # Wait for indexing to complete
     return requeue(project_id, user_id, repository_id) if repository.indexing?
 
     artifacts = repository.codebase_files
@@ -17,8 +16,8 @@ class GenerateRequirementsJob < ApplicationJob
     return if artifacts.empty?
 
     context = build_artifact_summary(artifacts)
-    generate_document(project, user, context, :product_overview, "Product Overview (Auto-Generated)")
-    generate_document(project, user, context, :technical_requirement, "Technical Requirements (Auto-Generated)")
+    update_or_create_document(project, user, context, :product_overview, "Product Overview")
+    update_or_create_document(project, user, context, :technical_requirement, "Technical Requirements")
   end
 
   private
@@ -40,16 +39,10 @@ class GenerateRequirementsJob < ApplicationJob
     summary.join("\n")
   end
 
-  def generate_document(project, user, context, doc_type, title)
+  def update_or_create_document(project, user, context, doc_type, title)
     return unless defined?(OPENROUTER_CLIENT) && OPENROUTER_CLIENT.present?
 
-    prompt = <<~PROMPT
-      Based on the following extracted code artifacts, generate a #{doc_type.to_s.humanize} document.
-      Format the output as HTML suitable for a rich text editor.
-
-      Artifacts:
-      #{context}
-    PROMPT
+    prompt = build_prompt(doc_type, context)
 
     response = OPENROUTER_CLIENT.chat(
       parameters: {
@@ -61,16 +54,55 @@ class GenerateRequirementsJob < ApplicationJob
     body = response.dig("choices", 0, "message", "content")
     return unless body
 
-    existing = project.documents.find_by(title: title)
+    existing = project.documents.find_by(document_type: doc_type)
     if existing
-      existing.update!(body: body, updated_by: user)
+      existing.create_version!(user)
+      existing.update!(body: body, updated_by: user, status: "ai_generated")
     else
       project.documents.create!(
         title: title,
         body: body,
         document_type: doc_type,
-        created_by: user
+        created_by: user,
+        status: "ai_generated"
       )
+    end
+  end
+
+  def build_prompt(doc_type, context)
+    case doc_type
+    when :product_overview
+      <<~PROMPT
+        Based on the following extracted code artifacts from a repository, generate a Product Overview document.
+        Include these sections as HTML headings (<h2>) with substantive content:
+        - What the application does (inferred from models, routes, and services)
+        - Key technologies and frameworks used
+        - Target users (inferred from the domain and features)
+        - Core features and capabilities
+
+        Format the output as clean HTML suitable for a rich text editor. Use <h2> for headings and <p> for paragraphs.
+        Do NOT wrap in markdown code fences. Output raw HTML only.
+
+        Artifacts:
+        #{context}
+      PROMPT
+    when :technical_requirement
+      <<~PROMPT
+        Based on the following extracted code artifacts from a repository, generate a Technical Requirements document.
+        Include these sections as HTML headings (<h2>) with substantive content:
+        - Data Models (list the key models and their relationships)
+        - API Routes and Endpoints
+        - Services and Business Logic
+        - Infrastructure and Dependencies
+        - Authentication and Authorization (if present)
+        - Performance Considerations
+
+        Format the output as clean HTML suitable for a rich text editor. Use <h2> for headings and <p> for paragraphs.
+        Do NOT wrap in markdown code fences. Output raw HTML only.
+
+        Artifacts:
+        #{context}
+      PROMPT
     end
   end
 end
