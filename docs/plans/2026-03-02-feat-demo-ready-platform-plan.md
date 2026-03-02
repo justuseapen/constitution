@@ -514,11 +514,11 @@ end
 ```
 
 **Acceptance Criteria:**
-- [ ] Repository architecture page shows Mermaid flowchart
-- [ ] Artifacts grouped by type (routes, controllers, services, models, etc.)
-- [ ] Edges inferred from code content (e.g., controller referencing a service class)
-- [ ] Diagram renders via existing Mermaid Stimulus controller
-- [ ] Diagram regenerates when repository is re-indexed
+- [x] Repository architecture page shows Mermaid flowchart
+- [x] Artifacts grouped by type (routes, controllers, services, models, etc.)
+- [x] Edges inferred from code content (e.g., controller referencing a service class)
+- [x] Diagram renders via existing Mermaid Stimulus controller
+- [x] Diagram regenerates when repository is re-indexed
 
 ##### 5.2 AI-Assisted Sequence Diagrams
 
@@ -530,10 +530,10 @@ end
 - `app/views/repositories/architecture.html.erb` -- "Generate sequence diagram" button per route
 
 **Acceptance Criteria:**
-- [ ] PM clicks a route artifact and gets a sequence diagram
-- [ ] Diagram shows request flow: route -> controller -> service -> model -> external
-- [ ] Diagram renders inline on the architecture page
-- [ ] Generated diagrams cached (regenerate on re-index)
+- [x] PM clicks a route artifact and gets a sequence diagram
+- [x] Diagram shows request flow: route -> controller -> service -> model -> external
+- [x] Diagram renders inline on the architecture page
+- [x] Generated diagrams cached (regenerate on re-index)
 
 ##### 5.3 Interactive Dependency Explorer
 
@@ -551,12 +551,12 @@ end
 4. Sidebar shows details of selected node
 
 **Acceptance Criteria:**
-- [ ] Explorer accessible from project navigation
-- [ ] Click node to expand neighbors
-- [ ] Impact analysis highlights affected nodes
-- [ ] Sidebar shows node details (type, name, properties)
-- [ ] Works with both Neo4j data and PostgreSQL fallback
-- [ ] `spec/controllers/graph_explorer_controller_spec.rb` passes
+- [x] Explorer accessible from project navigation
+- [x] Click node to expand neighbors
+- [x] Impact analysis highlights affected nodes
+- [x] Sidebar shows node details (type, name, properties)
+- [x] Works with both Neo4j data and PostgreSQL fallback
+- [x] `spec/controllers/graph_explorer_controller_spec.rb` passes
 
 ##### 5.4 Auto-Generate System Dependencies
 
@@ -569,10 +569,10 @@ end
 - `app/jobs/codebase_index_job.rb` -- call `DependencyInferrer` after artifact extraction
 
 **Acceptance Criteria:**
-- [ ] API client artifacts create dependencies to external systems
-- [ ] Queue publisher/consumer pairs create messaging dependencies
-- [ ] System map populated automatically after indexing
-- [ ] Manual dependencies preserved (not overwritten)
+- [x] API client artifacts create dependencies to external systems
+- [x] Queue publisher/consumer pairs create messaging dependencies
+- [x] System map populated automatically after indexing
+- [x] Manual dependencies preserved (not overwritten)
 
 ---
 

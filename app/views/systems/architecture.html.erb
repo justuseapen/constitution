@@ -1,0 +1,40 @@
+<% content_for(:page_title, "Architecture: #{@system.name}") %>
+
+<div class="space-y-6">
+  <div class="flex justify-between items-start">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Architecture: <%= @system.name %></h1>
+      <p class="text-gray-500 mt-1">Auto-generated from extracted code artifacts</p>
+    </div>
+    <%= link_to "Back to System", system_path(@system), class: "px-3 py-1.5 text-sm border rounded-lg hover:bg-gray-50" %>
+  </div>
+
+  <% if @diagrams.empty? %>
+    <div class="bg-white rounded-lg border p-8 text-center">
+      <p class="text-gray-500">No repositories with indexed code found for this system.</p>
+      <p class="text-sm text-gray-400 mt-2">Import and index a repository to generate architecture diagrams.</p>
+    </div>
+  <% end %>
+
+  <% @diagrams.each do |diagram| %>
+    <div class="bg-white rounded-lg border">
+      <div class="px-4 py-3 border-b">
+        <h2 class="font-semibold text-gray-900"><%= diagram[:repository].name %> - Dependency Flowchart</h2>
+      </div>
+      <div class="p-4 overflow-x-auto" data-controller="mermaid">
+        <pre data-mermaid-target="source" class="hidden"><%= diagram[:flowchart] %></pre>
+        <div data-mermaid-target="preview" class="flex justify-center"></div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg border">
+      <div class="px-4 py-3 border-b">
+        <h2 class="font-semibold text-gray-900"><%= diagram[:repository].name %> - Class Diagram</h2>
+      </div>
+      <div class="p-4 overflow-x-auto" data-controller="mermaid">
+        <pre data-mermaid-target="source" class="hidden"><%= diagram[:class_diagram] %></pre>
+        <div data-mermaid-target="preview" class="flex justify-center"></div>
+      </div>
+    </div>
+  <% end %>
+</div>

@@ -33,3 +33,6 @@ application.register("execution-log", ExecutionLogController)
 
 import IndexingProgressController from "./indexing_progress_controller"
 application.register("indexing-progress", IndexingProgressController)
+
+import GraphExplorerController from "./graph_explorer_controller"
+application.register("graph-explorer", GraphExplorerController)

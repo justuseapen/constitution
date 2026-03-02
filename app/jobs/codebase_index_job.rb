@@ -15,6 +15,8 @@ class CodebaseIndexJob < ApplicationJob
 
     generate_embeddings(@repository)
 
+    infer_dependencies(@repository)
+
     @repository.update!(indexing_status: :indexed, last_indexed_at: Time.current)
     broadcast_progress("complete", "Indexing complete")
     notify_user(user_id, "Repository '#{@repository.name}' indexing complete. #{@repository.codebase_files.count} files indexed.")
@@ -120,6 +122,12 @@ class CodebaseIndexJob < ApplicationJob
         end
       end
     end
+  end
+
+  def infer_dependencies(repository)
+    DependencyInferrer.new(repository).infer!
+  rescue StandardError => e
+    Rails.logger.warn("Dependency inference failed for repo #{repository.id}: #{e.message}")
   end
 
   def skip_file?(path)

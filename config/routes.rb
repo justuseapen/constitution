@@ -24,9 +24,20 @@ Rails.application.routes.draw do
 
   resource :onboarding, only: [:new, :create], controller: "onboarding"
 
+  resource :graph_explorer, only: [:show], controller: "graph_explorer" do
+    get :neighbors
+    get :impact_analysis
+    get :root_nodes
+  end
+
   resources :agent_chats, only: [:index, :create]
 
-  resources :systems
+  resources :systems do
+    member do
+      get :architecture
+      post :generate_diagram
+    end
+  end
 
   resources :notifications, only: [:index] do
     collection do
