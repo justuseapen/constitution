@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_27_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_02_144406) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -167,7 +167,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_000000) do
     t.string "name", null: false
     t.datetime "updated_at", null: false
     t.index ["artifact_type"], name: "index_extracted_artifacts_on_artifact_type"
-    t.index ["codebase_file_id", "name"], name: "index_extracted_artifacts_on_codebase_file_id_and_name", unique: true
+    t.index ["codebase_file_id", "name", "artifact_type"], name: "index_extracted_artifacts_on_file_name_and_type", unique: true
     t.index ["codebase_file_id"], name: "index_extracted_artifacts_on_codebase_file_id"
   end
 
@@ -281,6 +281,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_000000) do
     t.index ["team_id"], name: "index_users_on_team_id"
   end
 
+  create_table "work_order_executions", force: :cascade do |t|
+    t.string "branch_name"
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.text "error_message"
+    t.text "log"
+    t.string "pull_request_url"
+    t.bigint "repository_id"
+    t.datetime "started_at"
+    t.integer "status", default: 0, null: false
+    t.bigint "triggered_by_id", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "work_order_id", null: false
+    t.index ["repository_id"], name: "index_work_order_executions_on_repository_id"
+    t.index ["triggered_by_id"], name: "index_work_order_executions_on_triggered_by_id"
+    t.index ["work_order_id", "status"], name: "index_work_order_executions_on_work_order_id_and_status"
+    t.index ["work_order_id"], name: "index_work_order_executions_on_work_order_id"
+  end
+
   create_table "work_orders", force: :cascade do |t|
     t.text "acceptance_criteria"
     t.bigint "assignee_id"
@@ -324,6 +343,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_27_000000) do
   add_foreign_key "system_dependencies", "service_systems", column: "source_system_id"
   add_foreign_key "system_dependencies", "service_systems", column: "target_system_id"
   add_foreign_key "users", "teams"
+  add_foreign_key "work_order_executions", "repositories"
+  add_foreign_key "work_order_executions", "users", column: "triggered_by_id"
+  add_foreign_key "work_order_executions", "work_orders"
   add_foreign_key "work_orders", "phases"
   add_foreign_key "work_orders", "projects"
 end
