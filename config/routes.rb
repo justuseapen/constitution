@@ -4,10 +4,19 @@ Rails.application.routes.draw do
   resources :projects do
     resources :documents
     resources :blueprints
-    resources :work_orders
+    resources :work_orders do
+      member do
+        post :execute
+      end
+    end
     resources :feedback_items, only: [:index, :show, :update] do
       member do
         post :create_work_order
+      end
+    end
+    resources :repositories, only: [:create, :destroy], controller: "project_repositories" do
+      member do
+        post :retry_index
       end
     end
   end

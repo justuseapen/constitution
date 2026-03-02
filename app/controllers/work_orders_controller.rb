@@ -1,7 +1,7 @@
 class WorkOrdersController < ApplicationController
   before_action :authenticate_user!
   before_action :set_project
-  before_action :set_work_order, only: [:show, :edit, :update, :destroy]
+  before_action :set_work_order, only: [:show, :edit, :update, :destroy, :execute]
 
   def index
     @work_orders = @project.work_orders.includes(:assignee, :phase).order(:position)
@@ -41,6 +41,22 @@ class WorkOrdersController < ApplicationController
   def destroy
     @work_order.destroy
     redirect_to project_work_orders_path(@project), notice: "Work order deleted."
+  end
+
+  def execute
+    if @work_order.executions.where(status: :running).exists?
+      redirect_to project_work_order_path(@project, @work_order), alert: "An execution is already running."
+      return
+    end
+
+    execution = @work_order.executions.create!(
+      triggered_by: current_user,
+      status: :queued
+    )
+
+    WorkOrderExecutionJob.perform_later(execution.id)
+
+    redirect_to project_work_order_path(@project, @work_order), notice: "Agent execution started."
   end
 
   private
