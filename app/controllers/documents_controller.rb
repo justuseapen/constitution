@@ -1,7 +1,7 @@
 class DocumentsController < ApplicationController
   before_action :authenticate_user!
   before_action :set_project
-  before_action :set_document, only: [:show, :edit, :update, :destroy]
+  before_action :set_document, only: [ :show, :edit, :update, :destroy ]
 
   def index
     @documents = @project.documents.order(created_at: :desc)
@@ -35,6 +35,25 @@ class DocumentsController < ApplicationController
     else
       render :edit, status: :unprocessable_entity
     end
+  end
+
+  def import
+    file = params[:file]
+    unless file
+      redirect_to project_documents_path(@project), alert: "Please select a file to import."
+      return
+    end
+
+    document = Importers::DocumentImporter.new(
+      project: @project,
+      user: current_user,
+      file: file,
+      document_type: params[:document_type]&.to_sym || :feature_requirement
+    ).import!
+
+    redirect_to project_document_path(@project, document), notice: "Document imported successfully."
+  rescue StandardError => e
+    redirect_to project_documents_path(@project), alert: "Import failed: #{e.message}"
   end
 
   def destroy

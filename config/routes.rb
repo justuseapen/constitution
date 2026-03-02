@@ -2,30 +2,48 @@ Rails.application.routes.draw do
   devise_for :users
 
   resources :projects do
-    resources :documents
+    resources :documents do
+      collection do
+        post :import
+      end
+    end
     resources :blueprints
     resources :work_orders do
       member do
         post :execute
+        post :cancel_execution
       end
     end
-    resources :feedback_items, only: [:index, :show, :update] do
+    resources :feedback_items, only: [ :index, :show, :update ] do
       member do
         post :create_work_order
       end
     end
-    resources :repositories, only: [:create, :destroy], controller: "project_repositories" do
+    resources :repositories, only: [ :create, :destroy ], controller: "project_repositories" do
       member do
         post :retry_index
       end
     end
   end
 
-  resources :agent_chats, only: [:index, :create]
+  resource :onboarding, only: [ :new, :create ], controller: "onboarding"
 
-  resources :systems
+  resource :graph_explorer, only: [ :show ], controller: "graph_explorer" do
+    get :neighbors
+    get :impact_analysis
+    get :root_nodes
+  end
 
-  resources :notifications, only: [:index] do
+  resources :agent_chats, only: [ :index, :create ]
+
+  resources :systems do
+    member do
+      get :architecture
+      post :generate_diagram
+    end
+  end
+
+  resources :notifications, only: [ :index ] do
     collection do
       post :mark_read
       get :unread_count
@@ -34,7 +52,7 @@ Rails.application.routes.draw do
 
   namespace :api do
     namespace :v1 do
-      resources :feedback, only: [:create], controller: "feedback"
+      resources :feedback, only: [ :create ], controller: "feedback"
     end
   end
 

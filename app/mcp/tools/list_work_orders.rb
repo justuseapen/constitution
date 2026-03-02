@@ -16,7 +16,7 @@ module Tools
             status: { type: "string", description: "Filter by status (backlog, todo, in_progress, review, done)", enum: %w[backlog todo in_progress review done] },
             assignee_id: { type: "integer", description: "Filter by assignee user ID" }
           },
-          required: ["api_token", "project_id"]
+          required: [ "api_token", "project_id" ]
         }
       }
     end

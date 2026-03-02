@@ -20,7 +20,7 @@ RSpec.describe AgentChatJob, type: :job do
   before do
     stub_request(:post, "https://openrouter.ai/api/v1/chat/completions")
       .to_return(status: 200, body: {
-        choices: [{ message: { content: "Here is my response." } }]
+        choices: [ { message: { content: "Here is my response." } } ]
       }.to_json, headers: { "Content-Type" => "application/json" })
   end
 
@@ -28,7 +28,7 @@ RSpec.describe AgentChatJob, type: :job do
     messages_sent = nil
     allow(OPENROUTER_CLIENT).to receive(:chat) do |params|
       messages_sent = params[:parameters][:messages]
-      { "choices" => [{ "message" => { "content" => "Response" } }] }
+      { "choices" => [ { "message" => { "content" => "Response" } } ] }
     end
 
     AgentChatJob.perform_now(
@@ -44,8 +44,8 @@ RSpec.describe AgentChatJob, type: :job do
   it "saves the user message and assistant response" do
     allow(OPENROUTER_CLIENT).to receive(:chat) do |params|
       stream_proc = params[:parameters][:stream]
-      stream_proc.call({ "choices" => [{ "delta" => { "content" => "Response" } }] })
-      { "choices" => [{ "message" => { "content" => "Response" } }] }
+      stream_proc.call({ "choices" => [ { "delta" => { "content" => "Response" } } ] })
+      { "choices" => [ { "message" => { "content" => "Response" } } ] }
     end
 
     AgentChatJob.perform_now(

@@ -42,7 +42,7 @@ RSpec.describe ContextBuilder do
         codebase_file: double("CodebaseFile", path: "app/services/auth.rb")
       )
 
-      allow(CodeSearchService).to receive(:search).and_return([chunk])
+      allow(CodeSearchService).to receive(:search).and_return([ chunk ])
 
       context = ContextBuilder.new(project)
         .add_semantic_code_search("authentication")

@@ -13,6 +13,14 @@ class WorkOrderExecution < ApplicationRecord
     failed: 3
   }, default: :queued
 
+  enum :pr_status, {
+    pr_open: 0,
+    pr_approved: 1,
+    pr_changes_requested: 2,
+    pr_merged: 3,
+    pr_closed: 4
+  }, prefix: :pr
+
   scope :latest_first, -> { order(created_at: :desc) }
 
   def duration

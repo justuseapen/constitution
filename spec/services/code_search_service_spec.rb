@@ -13,7 +13,7 @@ RSpec.describe CodeSearchService do
     before do
       stub_const("OPENROUTER_CLIENT", double("OpenAI::Client"))
       allow(OPENROUTER_CLIENT).to receive(:embeddings).and_return({
-        "data" => [{ "embedding" => fake_embedding }]
+        "data" => [ { "embedding" => fake_embedding } ]
       })
     end
 
@@ -47,7 +47,7 @@ RSpec.describe CodeSearchService do
     before do
       stub_const("OPENROUTER_CLIENT", double("OpenAI::Client"))
       allow(OPENROUTER_CLIENT).to receive(:embeddings).and_return({
-        "data" => [{ "embedding" => fake_embedding }]
+        "data" => [ { "embedding" => fake_embedding } ]
       })
     end
 
@@ -68,7 +68,7 @@ RSpec.describe CodeSearchService do
 
       expect(OPENROUTER_CLIENT).to receive(:embeddings).with(
         parameters: { model: "openai/text-embedding-3-small", input: long_text.truncate(8000) }
-      ).and_return({ "data" => [{ "embedding" => fake_embedding }] })
+      ).and_return({ "data" => [ { "embedding" => fake_embedding } ] })
 
       CodeSearchService.send(:generate_embedding, long_text)
     end

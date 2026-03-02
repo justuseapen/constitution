@@ -11,8 +11,11 @@ export default class extends Controller {
 
   render() {
     const code = this.sourceTarget.textContent
-    mermaid.render("mermaid-preview", code).then(({ svg }) => {
+    const id = `mermaid-${Math.random().toString(36).substring(2, 9)}`
+    mermaid.render(id, code).then(({ svg }) => {
       this.previewTarget.innerHTML = svg
+    }).catch((error) => {
+      this.previewTarget.innerHTML = `<p class="text-sm text-red-500">Diagram rendering failed: ${error.message}</p>`
     })
   }
 }

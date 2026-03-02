@@ -19,7 +19,13 @@ class AgentChatsController < ApplicationController
     render json: { messages: messages }
   end
 
+  ALLOWED_CONVERSABLE_TYPES = %w[Document Blueprint WorkOrder].freeze
+
   def create
+    unless ALLOWED_CONVERSABLE_TYPES.include?(params[:conversable_type])
+      head :unprocessable_entity
+      return
+    end
     conversable = params[:conversable_type].constantize.find(params[:conversable_id])
     conversation = AgentConversation.find_or_create_by!(
       conversable: conversable, user: current_user

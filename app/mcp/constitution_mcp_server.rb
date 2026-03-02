@@ -74,10 +74,10 @@ class ConstitutionMcpServer
     {
       jsonrpc: "2.0",
       id: id,
-      result: { content: [{ type: "text", text: result.to_json }] }
+      result: { content: [ { type: "text", text: result.to_json } ] }
     }
   rescue StandardError => e
-    { jsonrpc: "2.0", id: id, result: { content: [{ type: "text", text: "Error: #{e.message}" }], isError: true } }
+    { jsonrpc: "2.0", id: id, result: { content: [ { type: "text", text: "Error: #{e.message}" } ], isError: true } }
   end
 
   def resources_list_response(id)
@@ -90,7 +90,7 @@ class ConstitutionMcpServer
     return error_response(-32602, "Unknown resource: #{uri}", id) unless resource
 
     content = resource.read(uri)
-    { jsonrpc: "2.0", id: id, result: { contents: [{ uri: uri, mimeType: "application/json", text: content.to_json }] } }
+    { jsonrpc: "2.0", id: id, result: { contents: [ { uri: uri, mimeType: "application/json", text: content.to_json } ] } }
   end
 
   def error_response(code, message, id)

@@ -16,7 +16,7 @@ module Tools
             work_order_id: { type: "integer", description: "Work order ID" },
             status: { type: "string", description: "New status", enum: %w[backlog todo in_progress review done] }
           },
-          required: ["api_token", "project_id", "work_order_id", "status"]
+          required: [ "api_token", "project_id", "work_order_id", "status" ]
         }
       }
     end

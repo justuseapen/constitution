@@ -11,6 +11,6 @@ class CreateCodebaseFiles < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :codebase_files, [:repository_id, :path], unique: true
+    add_index :codebase_files, [ :repository_id, :path ], unique: true
   end
 end

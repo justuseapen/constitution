@@ -59,7 +59,7 @@ module Importers
       content_type = @file.respond_to?(:content_type) ? @file.content_type : nil
       extension = File.extname(extract_title.parameterize).downcase
 
-      if content_type&.include?("markdown") || [".md", ".markdown"].include?(extension)
+      if content_type&.include?("markdown") || [ ".md", ".markdown" ].include?(extension)
         :markdown
       elsif content_type&.include?("wordprocessingml") || extension == ".docx"
         :docx
@@ -88,7 +88,7 @@ module Importers
         .gsub(/\*(.+?)\*/, '<em>\1</em>')
         .gsub(/^- (.+)$/, '<li>\1</li>')
         .gsub(/^(\d+)\. (.+)$/, '<li>\2</li>')
-        .gsub(/\n\n/, '</p><p>')
+        .gsub(/\n\n/, "</p><p>")
 
       "<p>#{html}</p>"
     end
@@ -129,7 +129,7 @@ module Importers
       response = OPENROUTER_CLIENT.chat(
         parameters: {
           model: "anthropic/claude-haiku-4-5-20251001",
-          messages: [{
+          messages: [ {
             role: "user",
             content: <<~PROMPT
               Take this raw document content and restructure it into a well-organized #{@document_type.to_s.humanize} document.
@@ -139,7 +139,7 @@ module Importers
               Content:
               #{document.body.truncate(6000)}
             PROMPT
-          }]
+          } ]
         }
       )
 

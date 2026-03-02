@@ -14,6 +14,6 @@ class CreateWorkOrderExecutions < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :work_order_executions, [:work_order_id, :status]
+    add_index :work_order_executions, [ :work_order_id, :status ]
   end
 end

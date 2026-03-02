@@ -7,7 +7,7 @@ class AgentChatJob < ApplicationJob
 
     channel = "agent_chat_#{conversation.conversable_type}_#{conversation.conversable_id}"
 
-    messages = [{ role: "system", content: system_prompt }]
+    messages = [ { role: "system", content: system_prompt } ]
     messages += conversation.messages.order(:created_at).map { |m| { role: m.role, content: m.content } }
 
     full_response = ""

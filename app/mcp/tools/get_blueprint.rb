@@ -15,7 +15,7 @@ module Tools
             project_id: { type: "integer", description: "Project ID" },
             blueprint_type: { type: "string", description: "Filter by blueprint type" }
           },
-          required: ["api_token", "project_id"]
+          required: [ "api_token", "project_id" ]
         }
       }
     end

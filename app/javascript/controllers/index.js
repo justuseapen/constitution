@@ -27,3 +27,12 @@ application.register("presence", PresenceController)
 
 import NotificationsController from "./notifications_controller"
 application.register("notifications", NotificationsController)
+
+import ExecutionLogController from "./execution_log_controller"
+application.register("execution-log", ExecutionLogController)
+
+import IndexingProgressController from "./indexing_progress_controller"
+application.register("indexing-progress", IndexingProgressController)
+
+import GraphExplorerController from "./graph_explorer_controller"
+application.register("graph-explorer", GraphExplorerController)

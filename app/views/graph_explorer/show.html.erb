@@ -1,0 +1,21 @@
+<% content_for(:page_title, "Dependency Explorer") %>
+
+<div class="flex h-[calc(100vh-4rem)]">
+  <!-- Graph Canvas -->
+  <div class="flex-1 bg-gray-50 relative" data-controller="graph-explorer" data-graph-explorer-root-url-value="<%= root_nodes_graph_explorer_path %>" data-graph-explorer-neighbors-url-value="<%= neighbors_graph_explorer_path %>" data-graph-explorer-impact-url-value="<%= impact_analysis_graph_explorer_path %>">
+    <div class="absolute top-4 left-4 z-10">
+      <h1 class="text-xl font-bold text-gray-900 bg-white/80 px-3 py-1 rounded-lg backdrop-blur-sm">Dependency Explorer</h1>
+    </div>
+    <svg data-graph-explorer-target="canvas" class="w-full h-full"></svg>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="w-80 bg-white border-l overflow-y-auto" data-graph-explorer-target="sidebar">
+    <div class="p-4 border-b">
+      <h2 class="font-semibold text-gray-900">Node Details</h2>
+    </div>
+    <div class="p-4" data-graph-explorer-target="details">
+      <p class="text-sm text-gray-500">Click a node to view details</p>
+    </div>
+  </div>
+</div>

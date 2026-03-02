@@ -11,6 +11,6 @@ class CreateRepositories < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :repositories, [:service_system_id, :name], unique: true
+    add_index :repositories, [ :service_system_id, :name ], unique: true
   end
 end

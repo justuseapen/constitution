@@ -14,7 +14,7 @@ module Tools
             api_token: { type: "string", description: "API authentication token" },
             system_id: { type: "integer", description: "ServiceSystem ID" }
           },
-          required: ["api_token", "system_id"]
+          required: [ "api_token", "system_id" ]
         }
       }
     end

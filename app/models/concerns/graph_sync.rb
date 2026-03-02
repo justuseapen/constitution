@@ -2,7 +2,7 @@ module GraphSync
   extend ActiveSupport::Concern
 
   included do
-    after_commit :sync_to_graph, on: [:create, :update]
+    after_commit :sync_to_graph, on: [ :create, :update ]
     after_commit :remove_from_graph, on: :destroy
   end
 

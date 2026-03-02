@@ -161,6 +161,6 @@ class CodeParser
       end
     end
 
-    [start_line + 50, lines.length].min
+    [ start_line + 50, lines.length ].min
   end
 end

@@ -1,7 +1,7 @@
 <aside class="w-64 bg-gray-900 text-white flex flex-col h-full flex-shrink-0">
   <div class="p-4 border-b border-gray-700">
     <h1 class="text-lg font-bold tracking-tight">Constitution</h1>
-    <p class="text-xs text-gray-400 mt-1"><%= current_user.team.name %></p>
+    <p class="text-xs text-gray-400 mt-1"><%= current_user.team&.name || "No team" %></p>
   </div>
 
   <% if @project&.persisted? %>
@@ -21,6 +21,7 @@
       <div class="pt-4">
         <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">Infrastructure</p>
         <%= sidebar_link "Systems", systems_path, icon: "server-stack" %>
+        <%= sidebar_link "Graph Explorer", graph_explorer_path, icon: "share" %>
       </div>
     </nav>
   <% else %>
@@ -28,6 +29,7 @@
       <p class="text-xs text-gray-400 uppercase tracking-wider mb-2">Navigation</p>
       <%= sidebar_link "Projects", projects_path, icon: "folder" %>
       <%= sidebar_link "Systems", systems_path, icon: "server-stack" %>
+      <%= sidebar_link "Graph Explorer", graph_explorer_path, icon: "share" %>
     </nav>
   <% end %>
 

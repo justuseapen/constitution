@@ -4,20 +4,49 @@
       <h1 class="text-2xl font-bold">Documents</h1>
       <p class="text-gray-500 text-sm"><%= @project.name %></p>
     </div>
-    <%= link_to "New Document", new_project_document_path(@project), class: "px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700" %>
+    <div class="flex gap-2">
+      <%= link_to "New Document", new_project_document_path(@project), class: "px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700" %>
+      <button onclick="document.getElementById('import-form').classList.toggle('hidden')" class="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm">
+        Import File
+      </button>
+    </div>
   </div>
 
-  <div class="space-y-3">
-    <% @documents.each do |document| %>
-      <%= link_to project_document_path(@project, document), class: "block p-4 border rounded hover:bg-gray-50" do %>
-        <div class="flex justify-between items-start">
-          <div>
-            <h2 class="font-semibold"><%= document.title %></h2>
-            <span class="text-xs px-2 py-0.5 rounded bg-gray-200 text-gray-600"><%= document.document_type.humanize %></span>
-          </div>
-          <span class="text-xs text-gray-400">v<%= document.version %></span>
-        </div>
-      <% end %>
+  <div id="import-form" class="hidden mb-6 p-4 bg-gray-50 border rounded-lg">
+    <%= form_with url: import_project_documents_path(@project), method: :post, multipart: true, class: "flex items-end gap-3" do |f| %>
+      <div class="flex-1">
+        <label class="block text-sm font-medium text-gray-700 mb-1">File (.md, .txt, .docx, .pdf)</label>
+        <%= f.file_field :file, accept: ".md,.txt,.docx,.pdf", class: "block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" %>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+        <%= f.select :document_type, [["Feature Requirement", "feature_requirement"], ["Technical Spec", "technical_specification"], ["Product Overview", "product_overview"]], {}, class: "block px-3 py-2 border border-gray-300 rounded text-sm" %>
+      </div>
+      <%= f.submit "Import", class: "px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded hover:bg-indigo-700 cursor-pointer" %>
     <% end %>
   </div>
+
+  <% if @documents.any? %>
+    <div class="space-y-3">
+      <% @documents.each do |document| %>
+        <%= link_to project_document_path(@project, document), class: "block p-4 border rounded hover:bg-gray-50" do %>
+          <div class="flex justify-between items-start">
+            <div>
+              <h2 class="font-semibold"><%= document.title %></h2>
+              <span class="text-xs px-2 py-0.5 rounded bg-gray-200 text-gray-600"><%= document.document_type.humanize %></span>
+            </div>
+            <span class="text-xs text-gray-400">v<%= document.version %></span>
+          </div>
+        <% end %>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="bg-white rounded-lg border">
+      <%= render "shared/empty_state",
+        title: "No documents yet",
+        description: "Documents capture your product requirements and specifications. Create one or connect a repository to auto-generate them.",
+        action_text: "New Document",
+        action_path: new_project_document_path(@project) %>
+    </div>
+  <% end %>
 </div>

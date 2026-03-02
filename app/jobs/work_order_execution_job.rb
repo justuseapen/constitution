@@ -5,8 +5,9 @@ class WorkOrderExecutionJob < ApplicationJob
 
   TIMEOUT = 10.minutes
 
-  def perform(execution_id)
+  def perform(execution_id, include_feedback: false)
     @execution = WorkOrderExecution.find(execution_id)
+    @include_feedback = include_feedback
     @work_order = @execution.work_order
     @project = @work_order.project
 
@@ -23,12 +24,12 @@ class WorkOrderExecutionJob < ApplicationJob
 
     start_execution
 
-    prompt_builder = WorkOrderPromptBuilder.new(work_order: @work_order, repository: nil)
+    prompt_builder = WorkOrderPromptBuilder.new(work_order: @work_order, repository: nil, execution: @execution, include_feedback: @include_feedback)
     repository = prompt_builder.select_repository(repositories)
-    branch = "wo-#{@work_order.id}-#{@work_order.title.parameterize[0..40]}"
-    @execution.update!(repository: repository, branch_name: branch)
 
-    prompt_builder = WorkOrderPromptBuilder.new(work_order: @work_order, repository: repository)
+    prompt_builder = WorkOrderPromptBuilder.new(work_order: @work_order, repository: repository, execution: @execution, include_feedback: @include_feedback)
+    @execution.update!(repository: repository, branch_name: prompt_builder.branch_name)
+
     prompt = prompt_builder.build
 
     prepare_repo(repository)
@@ -82,24 +83,36 @@ class WorkOrderExecutionJob < ApplicationJob
     repo_path = Rails.root.join("tmp", "repos", repository.id.to_s)
     channel = "execution_#{@execution.id}"
     output = ""
+    lines_since_flush = 0
+    last_flush = Time.current
 
     Timeout.timeout(TIMEOUT) do
       IO.popen(
-        ["claude", "--dangerously-skip-permissions", "--print"],
+        [ "claude", "--dangerously-skip-permissions", "--print" ],
         "r+",
         chdir: repo_path.to_s,
-        err: [:child, :out]
+        err: [ :child, :out ]
       ) do |io|
+        @execution.update_column(:pid, io.pid)
         io.write(prompt)
         io.close_write
 
         io.each_line do |line|
           output += line
-          @execution.update_column(:log, output)
+          lines_since_flush += 1
           ActionCable.server.broadcast(channel, { type: "log", content: line })
+
+          if lines_since_flush >= 50 || Time.current - last_flush >= 2
+            @execution.update_column(:log, output)
+            lines_since_flush = 0
+            last_flush = Time.current
+          end
         end
       end
     end
+
+    # Final flush to ensure all output is persisted
+    @execution.update_column(:log, output)
 
     unless $?.success?
       ActionCable.server.broadcast(channel, { type: "error", content: "Claude process exited with status #{$?.exitstatus}" })
@@ -110,25 +123,15 @@ class WorkOrderExecutionJob < ApplicationJob
   end
 
   def open_pull_request(repository)
-    repo_path = Rails.root.join("tmp", "repos", repository.id.to_s)
     branch = @execution.branch_name
     title = "WO-#{@work_order.id}: #{@work_order.title}"
     body = "Automated implementation for work order ##{@work_order.id}.\n\n**Description:**\n#{@work_order.description}"
 
-    pr_output, status = Open3.capture2e(
-      "gh", "pr", "create",
-      "--title", title,
-      "--body", body,
-      "--head", branch,
-      chdir: repo_path.to_s
-    )
-
-    if status.success?
-      pr_output.strip.lines.last.strip
-    else
-      Rails.logger.warn("Failed to create PR: #{pr_output}")
-      nil
-    end
+    provider = Vcs::ProviderFactory.for(repository)
+    provider.create_merge_request(branch: branch, title: title, body: body)
+  rescue RuntimeError => e
+    Rails.logger.warn("Failed to create PR/MR: #{e.message}")
+    nil
   end
 
   def complete_execution(output, pr_url)
@@ -139,6 +142,15 @@ class WorkOrderExecutionJob < ApplicationJob
       completed_at: Time.current
     )
     @work_order.update!(status: :review)
+
+    pr_msg = pr_url ? " PR: #{pr_url}" : ""
+    notify_triggered_user("Work order '#{@work_order.title}' completed.#{pr_msg}")
+
+    if pr_url.present?
+      @execution.update!(pr_status: :pr_open)
+      PrValidationJob.perform_later(@execution.id)
+      PrStatusTrackingJob.set(wait: 5.minutes).perform_later
+    end
   end
 
   def fail_execution(message, log: nil)
@@ -148,5 +160,20 @@ class WorkOrderExecutionJob < ApplicationJob
       log: log || @execution&.log,
       completed_at: Time.current
     )
+    @work_order&.update!(status: :todo) if @work_order&.in_progress?
+
+    notify_triggered_user("Work order '#{@work_order&.title}' execution failed: #{message}")
+  end
+
+  def notify_triggered_user(message)
+    return unless @execution&.triggered_by_id
+
+    Notification.create!(
+      user_id: @execution.triggered_by_id,
+      message: message,
+      notifiable: @work_order
+    )
+  rescue StandardError => e
+    Rails.logger.warn("Failed to create notification: #{e.message}")
   end
 end

@@ -7,6 +7,8 @@ class Project < ApplicationRecord
   has_many :feedback_items, dependent: :destroy
   has_many :drift_alerts, dependent: :destroy
   has_many :app_keys, dependent: :destroy
+  has_many :project_repositories, dependent: :destroy
+  has_many :repositories, through: :project_repositories
 
   validates :name, presence: true
 

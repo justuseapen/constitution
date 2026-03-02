@@ -1,3 +1,5 @@
+require "open3"
+
 module Importers
   class GitImporter
     def initialize(project:, user:, url:, service_system: nil)
@@ -20,7 +22,8 @@ module Importers
       @service_system.repositories.create!(
         name: name,
         url: @url,
-        default_branch: detect_default_branch
+        default_branch: detect_default_branch,
+        provider: detect_provider
       )
     end
 
@@ -39,7 +42,22 @@ module Importers
       url.split("/").last.sub(/\.git$/, "")
     end
 
+    def detect_provider
+      case @url
+      when /github\.com/ then :github
+      when /gitlab\.com/ then :gitlab
+      else :unknown
+      end
+    end
+
     def detect_default_branch
+      output, status = Open3.capture2("git", "ls-remote", "--symref", @url, "HEAD")
+      if status.success? && output.match?(%r{ref: refs/heads/(\S+)\s+HEAD})
+        output.match(%r{ref: refs/heads/(\S+)\s+HEAD})[1]
+      else
+        "main"
+      end
+    rescue StandardError
       "main"
     end
   end

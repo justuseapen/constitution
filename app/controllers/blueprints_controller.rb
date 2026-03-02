@@ -1,7 +1,7 @@
 class BlueprintsController < ApplicationController
   before_action :authenticate_user!
   before_action :set_project
-  before_action :set_blueprint, only: [:show, :edit, :update, :destroy]
+  before_action :set_blueprint, only: [ :show, :edit, :update, :destroy ]
 
   def index
     @blueprints = @project.blueprints.order(created_at: :desc)

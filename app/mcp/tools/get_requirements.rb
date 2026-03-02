@@ -15,7 +15,7 @@ module Tools
             project_id: { type: "integer", description: "Project ID" },
             document_type: { type: "string", description: "Filter by document type" }
           },
-          required: ["api_token", "project_id"]
+          required: [ "api_token", "project_id" ]
         }
       }
     end

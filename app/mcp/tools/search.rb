@@ -16,7 +16,7 @@ module Tools
             query: { type: "string", description: "Search query" },
             artifact_types: { type: "array", items: { type: "string" }, description: "Filter by types: documents, blueprints, work_orders, code" }
           },
-          required: ["api_token", "project_id", "query"]
+          required: [ "api_token", "project_id", "query" ]
         }
       }
     end

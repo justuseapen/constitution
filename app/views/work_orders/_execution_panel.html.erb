@@ -6,13 +6,29 @@
     <h3 class="text-lg font-semibold">Agent Execution</h3>
     <% repos_available = work_order.project.team.service_systems.flat_map(&:repositories).any?(&:indexed?) %>
     <% running = work_order.executions.where(status: [:queued, :running]).exists? %>
-    <% if repos_available && work_order.description.present? %>
-      <%= button_to "Run Agent",
-            execute_project_work_order_path(work_order.project, work_order),
-            method: :post,
-            disabled: running,
-            class: "px-4 py-2 rounded text-sm font-medium #{running ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}" %>
-    <% end %>
+    <div class="flex gap-2">
+      <% if repos_available && work_order.description.present? %>
+        <%= button_to "Run Agent",
+              execute_project_work_order_path(work_order.project, work_order),
+              method: :post,
+              disabled: running,
+              class: "px-4 py-2 rounded text-sm font-medium #{running ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}" %>
+        <% has_feedback = work_order.project.feedback_items.where(source: "qa_pipeline").where("technical_context->>'work_order_id' = ?", work_order.id.to_s).exists? %>
+        <% if has_feedback && !running %>
+          <%= button_to "Re-run with Feedback",
+                execute_project_work_order_path(work_order.project, work_order, include_feedback: true),
+                method: :post,
+                class: "px-4 py-2 rounded text-sm font-medium bg-amber-600 text-white hover:bg-amber-700" %>
+        <% end %>
+      <% end %>
+      <% if running %>
+        <%= button_to "Cancel",
+              cancel_execution_project_work_order_path(work_order.project, work_order),
+              method: :post,
+              data: { turbo_confirm: "Cancel the running execution?" },
+              class: "px-4 py-2 rounded text-sm font-medium bg-red-600 text-white hover:bg-red-700" %>
+      <% end %>
+    </div>
   </div>
 
   <% if latest %>
@@ -42,11 +58,23 @@
       </div>
 
       <% if latest.pull_request_url.present? %>
-        <div class="mb-2" data-execution-log-target="prLink">
+        <div class="mb-2 flex items-center gap-2" data-execution-log-target="prLink">
           <a href="<%= latest.pull_request_url %>" target="_blank"
              class="text-sm text-indigo-600 hover:text-indigo-800 underline">
-            View Pull Request &rarr;
+            View <%= latest.repository&.gitlab? ? "Merge Request" : "Pull Request" %> &rarr;
           </a>
+          <% if latest.pr_status.present? %>
+            <% pr_status_classes = {
+              "pr_open" => "bg-blue-100 text-blue-700",
+              "pr_approved" => "bg-green-100 text-green-700",
+              "pr_changes_requested" => "bg-yellow-100 text-yellow-700",
+              "pr_merged" => "bg-purple-100 text-purple-700",
+              "pr_closed" => "bg-gray-100 text-gray-600"
+            } %>
+            <span class="text-xs px-2 py-0.5 rounded-full <%= pr_status_classes[latest.pr_status] || 'bg-gray-100 text-gray-600' %>">
+              <%= latest.pr_status.sub("pr_", "").humanize %>
+            </span>
+          <% end %>
         </div>
       <% end %>
 

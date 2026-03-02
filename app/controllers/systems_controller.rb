@@ -1,6 +1,6 @@
 class SystemsController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_system, only: [:show, :edit, :update, :destroy]
+  before_action :set_system, only: [ :show, :edit, :update, :destroy, :architecture, :generate_diagram ]
 
   def index
     @systems = current_user.team.service_systems.includes(:outgoing_dependencies)
@@ -18,6 +18,30 @@ class SystemsController < ApplicationController
   end
 
   def show
+  end
+
+  def architecture
+    @repositories = @system.repositories.includes(codebase_files: :extracted_artifacts)
+    generator = MermaidGenerator.new
+
+    @diagrams = @repositories.map do |repo|
+      {
+        repository: repo,
+        flowchart: generator.dependency_flowchart(repo),
+        class_diagram: generator.model_class_diagram(repo)
+      }
+    end
+  end
+
+  def generate_diagram
+    artifact = ExtractedArtifact.joins(codebase_file: :repository)
+      .where(repositories: { service_system_id: @system.id })
+      .find(params[:artifact_id])
+
+    generator = AiDiagramGenerator.new
+    mermaid = generator.sequence_diagram_for_route(artifact)
+
+    render json: { mermaid: mermaid }
   end
 
   def new

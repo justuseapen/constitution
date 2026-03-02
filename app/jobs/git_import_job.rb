@@ -14,5 +14,6 @@ class GitImportJob < ApplicationJob
     )
 
     repository = importer.import!
+    ProjectRepository.find_or_create_by!(project: project, repository: repository)
   end
 end

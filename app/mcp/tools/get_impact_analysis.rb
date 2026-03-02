@@ -16,7 +16,7 @@ module Tools
             node_id: { type: "integer", description: "Node ID" },
             depth: { type: "integer", description: "How many hops to traverse (default: 3)" }
           },
-          required: ["api_token", "node_type", "node_id"]
+          required: [ "api_token", "node_type", "node_id" ]
         }
       }
     end

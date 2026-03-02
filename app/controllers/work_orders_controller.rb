@@ -1,7 +1,7 @@
 class WorkOrdersController < ApplicationController
   before_action :authenticate_user!
   before_action :set_project
-  before_action :set_work_order, only: [:show, :edit, :update, :destroy, :execute]
+  before_action :set_work_order, only: [ :show, :edit, :update, :destroy, :execute, :cancel_execution ]
 
   def index
     @work_orders = @project.work_orders.includes(:assignee, :phase).order(:position)
@@ -44,7 +44,7 @@ class WorkOrdersController < ApplicationController
   end
 
   def execute
-    if @work_order.executions.where(status: [:queued, :running]).exists?
+    if @work_order.executions.where(status: [ :queued, :running ]).exists?
       redirect_to project_work_order_path(@project, @work_order), alert: "An execution is already running."
       return
     end
@@ -54,9 +54,35 @@ class WorkOrdersController < ApplicationController
       status: :queued
     )
 
-    WorkOrderExecutionJob.perform_later(execution.id)
+    WorkOrderExecutionJob.perform_later(execution.id, include_feedback: params[:include_feedback] == "true")
 
     redirect_to project_work_order_path(@project, @work_order), notice: "Agent execution started."
+  end
+
+  def cancel_execution
+    execution = @work_order.executions.where(status: [ :queued, :running ]).order(created_at: :desc).first
+
+    unless execution
+      redirect_to project_work_order_path(@project, @work_order), alert: "No running execution to cancel."
+      return
+    end
+
+    if execution.pid.present?
+      begin
+        Process.kill("TERM", execution.pid)
+      rescue Errno::ESRCH
+        # Process already exited
+      end
+    end
+
+    execution.update!(
+      status: :failed,
+      error_message: "Cancelled by user",
+      completed_at: Time.current
+    )
+    @work_order.update!(status: :todo) if @work_order.in_progress?
+
+    redirect_to project_work_order_path(@project, @work_order), notice: "Execution cancelled."
   end
 
   private

@@ -10,6 +10,6 @@ class CreateExtractedArtifacts < ActiveRecord::Migration[8.1]
     end
 
     add_index :extracted_artifacts, :artifact_type
-    add_index :extracted_artifacts, [:codebase_file_id, :name], unique: true
+    add_index :extracted_artifacts, [ :codebase_file_id, :name ], unique: true
   end
 end

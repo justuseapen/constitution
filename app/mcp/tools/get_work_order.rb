@@ -15,7 +15,7 @@ module Tools
             project_id: { type: "integer", description: "Project ID" },
             work_order_id: { type: "integer", description: "Work order ID" }
           },
-          required: ["api_token", "project_id", "work_order_id"]
+          required: [ "api_token", "project_id", "work_order_id" ]
         }
       }
     end
