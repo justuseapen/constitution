@@ -5,7 +5,7 @@
   <div class="flex justify-between items-center mb-3">
     <h3 class="text-lg font-semibold">Agent Execution</h3>
     <% repos_available = work_order.project.team.service_systems.flat_map(&:repositories).any?(&:indexed?) %>
-    <% running = work_order.executions.where(status: :running).exists? %>
+    <% running = work_order.executions.where(status: [:queued, :running]).exists? %>
     <% if repos_available && work_order.description.present? %>
       <%= button_to "Run Agent",
             execute_project_work_order_path(work_order.project, work_order),

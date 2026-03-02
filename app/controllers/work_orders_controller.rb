@@ -44,7 +44,7 @@ class WorkOrdersController < ApplicationController
   end
 
   def execute
-    if @work_order.executions.where(status: :running).exists?
+    if @work_order.executions.where(status: [:queued, :running]).exists?
       redirect_to project_work_order_path(@project, @work_order), alert: "An execution is already running."
       return
     end

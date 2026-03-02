@@ -43,7 +43,7 @@ export default class extends Controller {
 
   updateStatus(status) {
     if (this.hasStatusTarget) {
-      this.statusTarget.textContent = status
+      this.statusTarget.textContent = status.charAt(0).toUpperCase() + status.slice(1)
       this.statusTarget.className = status === "completed"
         ? "px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800"
         : "px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800"

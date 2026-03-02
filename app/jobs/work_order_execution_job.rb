@@ -1,3 +1,5 @@
+require "open3"
+
 class WorkOrderExecutionJob < ApplicationJob
   queue_as :default
 
@@ -23,7 +25,8 @@ class WorkOrderExecutionJob < ApplicationJob
 
     prompt_builder = WorkOrderPromptBuilder.new(work_order: @work_order, repository: nil)
     repository = prompt_builder.select_repository(repositories)
-    @execution.update!(repository: repository)
+    branch = "wo-#{@work_order.id}-#{@work_order.title.parameterize[0..40]}"
+    @execution.update!(repository: repository, branch_name: branch)
 
     prompt_builder = WorkOrderPromptBuilder.new(work_order: @work_order, repository: repository)
     prompt = prompt_builder.build
@@ -40,6 +43,8 @@ class WorkOrderExecutionJob < ApplicationJob
     else
       fail_execution("Agent did not signal completion.", log: output)
     end
+  rescue Timeout::Error
+    fail_execution("Execution timed out after #{TIMEOUT / 60} minutes.", log: @execution&.log)
   rescue StandardError => e
     fail_execution("#{e.class}: #{e.message}", log: @execution&.log)
     Rails.logger.error("WorkOrderExecutionJob failed: #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}")
@@ -78,18 +83,21 @@ class WorkOrderExecutionJob < ApplicationJob
     channel = "execution_#{@execution.id}"
     output = ""
 
-    IO.popen(
-      ["claude", "--dangerously-skip-permissions", "--print"],
-      chdir: repo_path.to_s,
-      err: [:child, :out]
-    ) do |io|
-      io.write(prompt)
-      io.close_write
+    Timeout.timeout(TIMEOUT) do
+      IO.popen(
+        ["claude", "--dangerously-skip-permissions", "--print"],
+        "r+",
+        chdir: repo_path.to_s,
+        err: [:child, :out]
+      ) do |io|
+        io.write(prompt)
+        io.close_write
 
-      io.each_line do |line|
-        output += line
-        @execution.update_column(:log, output)
-        ActionCable.server.broadcast(channel, { type: "log", content: line })
+        io.each_line do |line|
+          output += line
+          @execution.update_column(:log, output)
+          ActionCable.server.broadcast(channel, { type: "log", content: line })
+        end
       end
     end
 
@@ -103,13 +111,19 @@ class WorkOrderExecutionJob < ApplicationJob
 
   def open_pull_request(repository)
     repo_path = Rails.root.join("tmp", "repos", repository.id.to_s)
-    branch = "wo-#{@work_order.id}-#{@work_order.title.parameterize[0..40]}"
+    branch = @execution.branch_name
     title = "WO-#{@work_order.id}: #{@work_order.title}"
     body = "Automated implementation for work order ##{@work_order.id}.\n\n**Description:**\n#{@work_order.description}"
 
-    pr_output = `cd #{repo_path} && gh pr create --title "#{title.gsub('"', '\\"')}" --body "#{body.gsub('"', '\\"')}" --head "#{branch}" 2>&1`
+    pr_output, status = Open3.capture2e(
+      "gh", "pr", "create",
+      "--title", title,
+      "--body", body,
+      "--head", branch,
+      chdir: repo_path.to_s
+    )
 
-    if $?.success?
+    if status.success?
       pr_output.strip.lines.last.strip
     else
       Rails.logger.warn("Failed to create PR: #{pr_output}")
