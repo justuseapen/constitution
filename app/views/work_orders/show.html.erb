@@ -10,7 +10,7 @@
         </div>
       </div>
 
-      <div class="flex gap-2 mb-4">
+      <div class="flex flex-wrap gap-2 mb-4">
         <span class="px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800"><%= @work_order.status.humanize %></span>
         <span class="px-2 py-1 rounded text-xs font-medium bg-gray-100"><%= @work_order.priority.humanize %></span>
         <% if @work_order.phase %>
@@ -18,6 +18,12 @@
         <% end %>
         <% if @work_order.assignee %>
           <span class="text-xs text-gray-500">Assigned: <%= @work_order.assignee.name %></span>
+        <% end %>
+        <% latest_exec = @work_order.executions.latest_first.first %>
+        <% if latest_exec&.repository %>
+          <span class="text-xs text-gray-500">
+            Repo: <%= link_to latest_exec.repository.name, system_path(latest_exec.repository.service_system), class: "text-indigo-600 hover:text-indigo-800" %>
+          </span>
         <% end %>
       </div>
 

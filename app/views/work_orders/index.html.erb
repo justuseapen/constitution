@@ -4,6 +4,16 @@
     <%= link_to "New Work Order", new_project_work_order_path(@project), class: "px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700" %>
   </div>
 
+  <% if @work_orders.empty? %>
+    <div class="bg-white rounded-lg border">
+      <%= render "shared/empty_state",
+        title: "No work orders yet",
+        description: "Work orders let you assign tasks to the AI coding agent. Create one to get started.",
+        action_text: "Create First Work Order",
+        action_path: new_project_work_order_path(@project) %>
+    </div>
+  <% end %>
+
   <div data-controller="kanban"
        data-kanban-url-value="<%= project_work_order_path(@project, ':id') %>"
        class="flex gap-4 overflow-x-auto">

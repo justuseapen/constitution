@@ -2,7 +2,11 @@ Rails.application.routes.draw do
   devise_for :users
 
   resources :projects do
-    resources :documents
+    resources :documents do
+      collection do
+        post :import
+      end
+    end
     resources :blueprints
     resources :work_orders do
       member do

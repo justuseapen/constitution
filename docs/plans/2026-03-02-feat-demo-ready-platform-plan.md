@@ -1,7 +1,7 @@
 ---
 title: "feat: Demo-Ready Platform"
 type: feat
-status: active
+status: completed
 date: 2026-03-02
 ---
 
@@ -590,9 +590,9 @@ end
 - `app/views/shared/_empty_state.html.erb` -- reusable empty state partial
 
 **Acceptance Criteria:**
-- [ ] Every list view has a helpful empty state
-- [ ] Empty states include a clear call-to-action
-- [ ] First-time project shows "Connect a repository to get started"
+- [x] Every list view has a helpful empty state
+- [x] Empty states include a clear call-to-action
+- [x] First-time project shows "Connect a repository to get started"
 
 ##### 6.2 Navigation Improvements
 
@@ -604,11 +604,11 @@ end
 - `app/views/layouts/_navigation.html.erb` -- add Architecture and Graph Explorer links
 
 **Acceptance Criteria:**
-- [ ] Work order -> linked PR/MR (clickable)
-- [ ] Work order -> target repository
-- [ ] Project dashboard -> architecture view
-- [ ] Project dashboard -> kanban board
-- [ ] Main nav includes Architecture link
+- [x] Work order -> linked PR/MR (clickable)
+- [x] Work order -> target repository
+- [x] Project dashboard -> architecture view
+- [x] Project dashboard -> kanban board
+- [x] Main nav includes Architecture link
 
 ##### 6.3 Document Import UI
 
@@ -622,9 +622,9 @@ end
 - Active Storage attachment on Document model for source files
 
 **Acceptance Criteria:**
-- [ ] Upload .md, .docx, or .pdf files
-- [ ] Imported content creates a new Document with AI-restructured body
-- [ ] Original file attached for reference
+- [x] Upload .md, .docx, or .pdf files
+- [x] Imported content creates a new Document with AI-restructured body
+- [x] Original file attached for reference
 
 ##### 6.4 Project Scoping for Repositories
 
@@ -639,9 +639,9 @@ end
 - `app/services/importers/git_importer.rb` -- associate imported repo with current project
 
 **Acceptance Criteria:**
-- [ ] Repositories scoped to projects (not just teams)
-- [ ] Work order execution selects from project's repos only
-- [ ] Architecture view shows project's repos only
+- [x] Repositories scoped to projects (not just teams)
+- [x] Work order execution selects from project's repos only
+- [x] Architecture view shows project's repos only
 
 ---
 

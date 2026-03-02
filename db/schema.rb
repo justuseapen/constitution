@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_02_171627) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_02_173758) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -210,6 +210,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_02_171627) do
     t.index ["project_id"], name: "index_phases_on_project_id"
   end
 
+  create_table "project_repositories", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "project_id", null: false
+    t.bigint "repository_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["project_id", "repository_id"], name: "index_project_repositories_on_project_id_and_repository_id", unique: true
+    t.index ["project_id"], name: "index_project_repositories_on_project_id"
+    t.index ["repository_id"], name: "index_project_repositories_on_repository_id"
+  end
+
   create_table "projects", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "description"
@@ -340,6 +350,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_02_171627) do
   add_foreign_key "feedback_items", "projects"
   add_foreign_key "notifications", "users"
   add_foreign_key "phases", "projects"
+  add_foreign_key "project_repositories", "projects"
+  add_foreign_key "project_repositories", "repositories"
   add_foreign_key "projects", "teams"
   add_foreign_key "repositories", "service_systems"
   add_foreign_key "service_systems", "teams"

@@ -3,6 +3,8 @@ class Repository < ApplicationRecord
 
   belongs_to :service_system
   has_many :codebase_files, dependent: :destroy
+  has_many :project_repositories, dependent: :destroy
+  has_many :projects, through: :project_repositories
 
   enum :provider, { github: 0, gitlab: 1, unknown: 2 }
 
