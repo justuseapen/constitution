@@ -86,7 +86,7 @@
       </details>
     <% end %>
   <% else %>
-    <% unless work_order.project.team.service_systems.flat_map(&:repositories).any?(&:indexed?) %>
+    <% if !work_order.project.team.service_systems.flat_map(&:repositories).any?(&:indexed?) %>
       <p class="text-sm text-gray-500">No indexed repositories. Import a repository first.</p>
     <% elsif work_order.description.blank? %>
       <p class="text-sm text-gray-500">Add a description to enable agent execution.</p>
