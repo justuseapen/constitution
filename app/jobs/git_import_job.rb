@@ -14,12 +14,5 @@ class GitImportJob < ApplicationJob
     )
 
     repository = importer.import!
-
-    # After indexing completes, generate requirements from extracted artifacts
-    GenerateRequirementsJob.perform_later(
-      project_id: project.id,
-      user_id: user.id,
-      repository_id: repository.id
-    )
   end
 end

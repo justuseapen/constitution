@@ -35,6 +35,10 @@ Initialize Rails 8 application with Docker Compose infrastructure (Postgres, Neo
 | Project Importers (Git, Jira, Document Upload) | Complete | master | Three importers with AI-powered requirement generation |
 | Conversation History Endpoint | Complete | master | GET /agent_chats for loading previous messages |
 | Agent Chat UI Upgrade (streaming-markdown, resize, full UX) | Complete | master | Production-ready chat with streaming markdown and resizable sidebar |
+| WorkOrderExecution Model & Migration | Complete | master | Foundation model for work order execution feature |
+| WorkOrderPromptBuilder Service | Complete | master | Builds prompts and selects repositories for executions |
+| WorkOrderExecutionJob | Complete | master | Autonomous agent execution job with Claude Code CLI integration |
+| WorkOrderExecutionChannel (ActionCable) | Complete | master | Real-time channel for streaming execution logs |
 
 ## Blockers
 - [ ] _None yet_
@@ -58,7 +62,104 @@ Initialize Rails 8 application with Docker Compose infrastructure (Postgres, Neo
 - ruby-openai for OpenRouter integration (OpenAI-compatible API)
 
 ## Context for Next Session
-Task 18 complete: FeedbackItem Model & API Endpoint with auto-triage implemented.
+Task 3 complete: WorkOrderExecutionJob for autonomous agent execution.
+
+Key files created:
+- **Job:** `app/jobs/work_order_execution_job.rb` - Orchestrates Claude Code CLI execution
+- **Spec:** `spec/jobs/work_order_execution_job_spec.rb` - TDD spec with 6 passing tests
+
+Commit: 585afdd "feat: add WorkOrderExecutionJob for autonomous agent execution"
+
+Features implemented:
+- **WorkOrderExecutionJob:**
+  - Queue: default
+  - Timeout: 10 minutes
+  - perform(execution_id): Main entry point for job execution
+  - Pre-flight checks:
+    - claude_available?: Checks if Claude CLI is installed via `which claude`
+    - find_repositories: Finds all indexed repositories from team's service systems
+  - Execution flow:
+    1. start_execution: Sets execution status to :running, work order status to :in_progress
+    2. Select repository via WorkOrderPromptBuilder.select_repository (artifact overlap scoring)
+    3. Build prompt via WorkOrderPromptBuilder.build
+    4. prepare_repo: Clone or pull repository to tmp/repos/{id}
+    5. execute_claude: Shell out to Claude CLI with --dangerously-skip-permissions --print
+    6. Parse completion signal: <constitution>COMPLETE</constitution> or <constitution>FAILED: reason</constitution>
+    7. open_pull_request: Create PR via gh CLI with WO-{id} prefix
+    8. complete_execution or fail_execution: Update execution and work order status
+
+- **execute_claude method:**
+  - Uses IO.popen to shell out to Claude Code CLI
+  - Streams output line-by-line via ActionCable to "execution_{id}" channel
+  - Writes prompt to stdin, closes write stream
+  - Accumulates full output and updates execution.log on each line
+  - Broadcasts { type: "log", content: line } for live UI updates
+  - Broadcasts { type: "error" } on non-zero exit
+  - Broadcasts { type: "complete", status: "completed|failed" } at end
+  - Returns full output for signal parsing
+
+- **prepare_repo method:**
+  - Clones repo if not exists: git clone --branch {default_branch} {url} tmp/repos/{id}
+  - Pulls latest if exists: git checkout {default_branch} && git pull --ff-only
+  - Uses system() with exception: true for error handling
+
+- **open_pull_request method:**
+  - Generates branch name: "wo-{id}-{title-slug}" (max 40 chars + prefix)
+  - Uses gh CLI: gh pr create --title "WO-{id}: {title}" --body "..." --head {branch}
+  - Parses PR URL from last line of output
+  - Returns nil on failure (logs warning, doesn't fail job)
+
+- **Completion signals:**
+  - <constitution>COMPLETE</constitution>: Marks execution completed, work order review
+  - <constitution>FAILED: reason</constitution>: Extracts reason, marks execution failed
+  - No signal or unexpected output: Marks execution failed with "Agent did not signal completion"
+
+- **Error handling:**
+  - Rescue StandardError: Catches all errors, marks execution failed with exception message
+  - Logs error with first 5 backtrace lines for debugging
+  - fail_execution: Safe update that checks for @execution presence
+
+- **Status transitions:**
+  - Execution: queued → running → completed|failed
+  - Work order: (any) → in_progress → review (on success) or unchanged (on failure)
+
+- **Tests (6 examples, all passing):**
+  - Queue name validation
+  - Claude CLI not found error handling
+  - No indexed repositories error handling
+  - Work order status update to :review on success
+  - Execution completed status with PR URL on success signal
+  - Execution failed status with error message on failure signal
+
+Implementation notes:
+- Followed TDD: wrote spec first, verified failure, implemented job, verified passing
+- All tests use allow_any_instance_of to mock expensive operations (git, claude, gh)
+- ActionCable broadcasting for real-time UI updates (no channel needed in tests)
+- Uses Rails.root.join for portable path handling
+- Repos cloned to tmp/repos/{repository_id} (gitignored, not committed)
+- PR creation optional: nil PR URL doesn't fail execution, just logged
+- Claude CLI requires --dangerously-skip-permissions for automated use
+- Claude CLI --print flag enables non-interactive mode (no TUI)
+- IO.popen with chdir: sets working directory for Claude execution
+- update_column(:log) used for log streaming (skips validations/callbacks for performance)
+- Branch name truncated to prevent git errors (max 40 chars + prefix = 43 chars total)
+
+Technical decisions:
+- IO.popen over system() for streaming output capture
+- ActionCable for real-time UI updates (WebSocket-based)
+- Claude CLI shelling out (not MCP protocol) for simplicity
+- Git operations via system() with exception: true for error propagation
+- gh CLI for PR creation (requires GitHub CLI installed on server)
+- Completion signals use XML-like tags for easy parsing (regex match)
+- Repository selection delegated to WorkOrderPromptBuilder (artifact overlap scoring)
+- Prompt building delegated to WorkOrderPromptBuilder (context assembly)
+- Work order status updated to :review on success (requires manual review before merge)
+- Execution log stored in database for post-execution analysis
+- Timeout set to 10 minutes (not enforced in job, rely on job queue timeout)
+- No retry logic: let job queue handle retries if needed
+- Team-scoped repository lookup: all service systems in project's team
+
+Ready for next task: WorkOrderExecutionJob complete. Can now build UI for triggering executions, or add execution monitoring/streaming views.
 
 Key files created/modified:
 - **Channel:** `app/channels/agent_chat_channel.rb` - Action Cable channel for streaming
@@ -385,7 +486,37 @@ Technical decisions:
 - Submitted_by_email enables user follow-up without full user accounts
 
 ## Context for Next Session
-Tasks 4, 5, and 6 complete: Agent Chat UI Upgrade with streaming-markdown, resize, and full UX.
+Task 4 complete: WorkOrderExecutionChannel (ActionCable).
+
+Key file created:
+- **Channel:** `app/channels/work_order_execution_channel.rb` - Real-time channel for streaming execution logs
+
+Commit: c09c8c6 "feat: add WorkOrderExecutionChannel for live log streaming"
+
+Features implemented:
+- **WorkOrderExecutionChannel:**
+  - Subscribes to "execution_{execution_id}" stream
+  - Enables real-time log streaming for work order executions
+  - Used by WorkOrderExecutionJob to broadcast log chunks, errors, and completion events
+  - Simple channel with single subscribed method (follows pattern from other channels)
+
+Implementation notes:
+- Channel follows same pattern as AgentChatChannel, DocumentChannel, NotificationChannel
+- Stream name matches format used in WorkOrderExecutionJob (execution_{id})
+- No authentication needed (handled at subscription level by ApplicationCable::Connection)
+- Enables WebSocket-based log streaming without polling
+- All Ruby syntax validated with ruby -c
+- Ready to be consumed by frontend Stimulus controller
+
+Technical decisions:
+- Stream naming convention: "execution_{id}" for execution-specific broadcasts
+- Minimal channel implementation (only subscribed method needed)
+- No unsubscribed callback (not needed for log streaming use case)
+- Follows Action Cable best practices (stream_from for targeted broadcasts)
+
+Ready for next task: Task 4 complete. WorkOrderExecutionChannel provides real-time infrastructure for streaming execution logs to the frontend. Can now build UI controller/views for work order execution monitoring, or proceed with next feature.
+
+Previous context (Tasks 4, 5, and 6): Agent Chat UI Upgrade with streaming-markdown, resize, and full UX.
 
 Key files modified:
 - **Dependencies:** Added `streaming-markdown@0.2.15` and `highlight.js@11.9.0` to package.json
@@ -1094,3 +1225,177 @@ Technical decisions:
 - Real-time notification increments badge but doesn't auto-open dropdown (user controls visibility)
 
 Ready for next task: Real-time collaboration infrastructure complete. Ready to integrate notification bell into layout, or proceed with next feature.
+
+## Context for Next Session
+Tasks 1 & 2 complete: WorkOrderExecution Model & WorkOrderPromptBuilder Service.
+
+Task 2 complete: WorkOrderPromptBuilder Service.
+
+Key files created:
+- **Service:** `app/services/work_order_prompt_builder.rb` - Builds prompts for autonomous work order execution
+- **Spec:** `spec/services/work_order_prompt_builder_spec.rb` - TDD spec with 7 passing tests
+
+Commit: 5c2f360 "feat: add WorkOrderPromptBuilder service"
+
+Features implemented:
+- **WorkOrderPromptBuilder Service:**
+  - initialize(work_order:, repository:) - Constructor with work order and optional repository
+  - build() - Builds complete prompt with three sections:
+    1. Work order section (title, description, acceptance criteria)
+    2. Artifacts section (indexed codebase context)
+    3. Instructions section (branch naming, completion signals)
+  - select_repository(repositories) - Selects best repository by artifact overlap
+
+- **build() Method:**
+  - Returns formatted prompt string with three sections combined
+  - Work order section includes autonomous agent preamble
+  - Artifacts section limits to MAX_CONTEXT_TOKENS (8000 tokens = 32,000 chars)
+  - Grouped by artifact_type (models, controllers, routes, etc)
+  - Limits to 15 artifacts per type to prevent overflow
+  - Instructions section includes:
+    - Branch naming: "wo-{id}-{title-slug}"
+    - Step-by-step implementation guide
+    - Test suite execution requirement
+    - Completion signal: `<constitution>COMPLETE</constitution>`
+    - Failure signal: `<constitution>FAILED: {reason}</constitution>`
+
+- **select_repository() Method:**
+  - Returns first repository if only one available
+  - For multiple repositories, scores by artifact overlap:
+    - Extracts words from work order title + description
+    - Counts artifacts whose names contain matching words
+    - Uses underscore conversion and word tokenization
+    - Returns repository with highest overlap score
+  - Uses Set for efficient word lookup
+  - Case-insensitive matching
+
+- **Prompt Structure:**
+  ```
+  You are an autonomous coding agent. Implement the following work order.
+
+  ## Work Order
+  **Title:** {title}
+  **Description:** {description}
+  **Acceptance Criteria:**
+  {acceptance_criteria}
+
+  ## Codebase Context
+
+  ### Models
+  - User (`app/models/user.rb`)
+  - Post (`app/models/post.rb`)
+
+  ### Controllers
+  - UsersController (`app/controllers/users_controller.rb`)
+
+  ## Instructions
+  1. You are working in this repository. It is already cloned and on the default branch.
+  2. Create a feature branch: `wo-{id}-{title-slug}`
+  3. Implement the change described above.
+  4. Run the project's test suite. Fix any failures your changes introduce.
+  5. Commit your changes with a descriptive message.
+  6. Push the branch to origin.
+  7. When done, output exactly: <constitution>COMPLETE</constitution>
+  8. If you cannot complete the work, output exactly: <constitution>FAILED: {reason}</constitution>
+  ```
+
+Implementation notes:
+- Followed TDD: wrote spec first, verified failure, implemented service, verified passing
+- All 7 tests passing (0 failures)
+- Uses factory pattern from existing codebase (work_order, repository, codebase_file, extracted_artifact)
+- Truncates branch names to 40 chars + prefix to prevent git errors
+- Skips artifacts section if repository is nil or has no artifacts
+- Uses includes(:extracted_artifacts) to prevent N+1 queries
+- Groups artifacts by type for better readability
+- Respects token budget with character counting (CHARS_PER_TOKEN = 4)
+
+Technical decisions:
+- MAX_CONTEXT_TOKENS set to 8000 (32,000 chars) to fit within Claude context window
+- CHARS_PER_TOKEN = 4 based on typical English text tokenization
+- select_repository uses word matching instead of full semantic search (faster, simpler)
+- Branch naming uses parameterize for URL-safe slugs
+- Instructions formatted as heredoc for clean multi-line strings
+- Completion signals use XML-like tags for easy parsing
+- Artifacts limited to 15 per type to prevent overwhelming the agent
+- Query limits to 50 codebase_files to prevent memory issues
+- Returns nil for artifacts_section if no artifacts (graceful degradation)
+
+Ready for next task: Task 3 - WorkOrderExecutionJob (orchestrates Claude Code execution via MCP).
+
+Previous: Task 1 complete: WorkOrderExecution Model & Migration.
+
+Key files created/modified:
+- **Migration:** `db/migrate/20260302144406_create_work_order_executions.rb` - Executions table with status enum, logs, timestamps
+- **Model:** `app/models/work_order_execution.rb` - Execution model with validations and business logic
+- **Spec:** `spec/models/work_order_execution_spec.rb` - Model spec with associations, validations, enum tests
+- **Factory:** `spec/factories/work_order_executions.rb` - Factory with team-scoped user association
+- **Association:** `app/models/work_order.rb` - Added has_many :executions to WorkOrder
+
+Commit: 8988aca "feat: add WorkOrderExecution model and migration"
+
+Features implemented:
+- **WorkOrderExecution Model:**
+  - Belongs to WorkOrder (required)
+  - Belongs to Repository (optional) - links execution to codebase
+  - Belongs to triggered_by (User, required) - tracks who started the execution
+  - Status enum: queued (0), running (1), completed (2), failed (3), default: queued
+  - Validates presence of status
+  - Custom validation: only_one_running_per_work_order prevents concurrent runs
+  - Scope: latest_first orders by created_at desc
+  - Helper methods:
+    - duration: calculates time from started_at to completed_at (or now)
+    - append_log(text): appends text to log field for streaming logs
+
+- **Database Schema:**
+  - work_order_id (FK, required) - links to work_order
+  - repository_id (FK, optional) - links to codebase being worked on
+  - triggered_by_id (FK, required) - links to user who triggered execution
+  - status (integer, default 0, required) - execution state
+  - branch_name (string) - git branch created for work
+  - pull_request_url (string) - PR URL after completion
+  - log (text) - streaming execution logs
+  - error_message (text) - error details on failure
+  - started_at (datetime) - when execution started
+  - completed_at (datetime) - when execution finished
+  - created_at, updated_at (timestamps)
+  - Index on [work_order_id, status] for fast lookups by work order and status
+
+- **WorkOrder Association:**
+  - Added has_many :executions, class_name: "WorkOrderExecution", dependent: :destroy
+  - Allows WorkOrder to track all execution attempts
+  - Cascading delete removes executions when work order deleted
+
+- **Factory:**
+  - Creates execution with work_order, triggered_by (team-scoped user), status: queued
+  - Uses association :user with team scoped to work_order.project.team
+
+- **Tests:**
+  - 6 examples, all passing:
+    - Validates belongs_to :work_order (required)
+    - Validates belongs_to :repository (optional)
+    - Validates belongs_to :triggered_by (User, required)
+    - Validates presence of status
+    - Tests status enum values (queued, running, completed, failed)
+    - Tests concurrent run validation (prevents two running executions)
+
+Implementation notes:
+- Database running - all migrations executed successfully
+- All tests passing (6 examples, 0 failures)
+- Followed TDD: wrote spec first, verified failure, implemented model, verified passing
+- WorkOrder spec still passes (7 examples, 0 failures) - no regressions
+- Migration includes composite index for performance on status queries
+- Validation on :create prevents blocking updates to existing running executions
+- Uses Time.current for Rails best practices (respects time zone config)
+
+Technical decisions:
+- Status enum with integer backing for efficient storage and querying
+- Optional repository allows executions not tied to codebase (e.g., manual tasks)
+- triggered_by uses User model directly (not polymorphic) for simplicity
+- Validation prevents concurrent runs at database constraint level (not DB constraint to allow custom error message)
+- append_log method uses update! for immediate persistence (will be used by streaming job)
+- duration returns nil if not started (clean handling of queued executions)
+- latest_first scope for showing most recent executions first in UI
+- dependent: :destroy on WorkOrder ensures cleanup when work orders deleted
+- Schema uses bigint for foreign keys (Rails default, supports large datasets)
+
+Ready for next task: WorkOrderExecution foundation complete. Can now build execution job, controller, and UI components.

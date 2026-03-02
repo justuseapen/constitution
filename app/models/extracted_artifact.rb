@@ -17,5 +17,5 @@ class ExtractedArtifact < ApplicationRecord
     queue_consumer: 7,
     protobuf: 8,
     openapi_spec: 9
-  }
+  }, prefix: true
 end

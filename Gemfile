@@ -98,3 +98,5 @@ group :test do
   gem "webmock", "~> 3.23"
   gem "vcr", "~> 6.2"
 end
+
+gem "dotenv-rails", "~> 3.2", :groups => [:development, :test]

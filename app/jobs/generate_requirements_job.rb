@@ -6,8 +6,6 @@ class GenerateRequirementsJob < ApplicationJob
     user = User.find(user_id)
     repository = Repository.find(repository_id)
 
-    return requeue(project_id, user_id, repository_id) if repository.indexing?
-
     artifacts = repository.codebase_files
       .joins(:extracted_artifacts)
       .includes(:extracted_artifacts)
@@ -21,14 +19,6 @@ class GenerateRequirementsJob < ApplicationJob
   end
 
   private
-
-  def requeue(project_id, user_id, repository_id)
-    self.class.set(wait: 30.seconds).perform_later(
-      project_id: project_id,
-      user_id: user_id,
-      repository_id: repository_id
-    )
-  end
 
   def build_artifact_summary(artifacts)
     summary = []
@@ -44,12 +34,17 @@ class GenerateRequirementsJob < ApplicationJob
 
     prompt = build_prompt(doc_type, context)
 
-    response = OPENROUTER_CLIENT.chat(
-      parameters: {
-        model: "anthropic/claude-sonnet-4-5-20250929",
-        messages: [{ role: "user", content: prompt }]
-      }
-    )
+    begin
+      response = OPENROUTER_CLIENT.chat(
+        parameters: {
+          model: "anthropic/claude-sonnet-4.5",
+          messages: [{ role: "user", content: prompt }]
+        }
+      )
+    rescue Faraday::Error => e
+      Rails.logger.error("GenerateRequirementsJob LLM call failed for #{doc_type}: #{e.message}")
+      return
+    end
 
     body = response.dig("choices", 0, "message", "content")
     return unless body

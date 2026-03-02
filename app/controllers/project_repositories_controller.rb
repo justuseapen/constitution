@@ -22,7 +22,7 @@ class ProjectRepositoriesController < ApplicationController
   def retry_index
     repo = Repository.find(params[:id])
     repo.update_column(:indexing_status, 0) # pending
-    CodebaseIndexJob.perform_later(repo.id)
+    CodebaseIndexJob.perform_later(repo.id, project_id: @project.id, user_id: current_user.id)
     redirect_to @project, notice: "Re-indexing started for #{repo.name}."
   end
 

@@ -25,7 +25,7 @@ module Importers
     end
 
     def trigger_indexing(repository)
-      CodebaseIndexJob.perform_later(repository.id)
+      CodebaseIndexJob.perform_later(repository.id, project_id: @project.id, user_id: @user.id)
     end
 
     def find_or_create_system

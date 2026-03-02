@@ -1,7 +1,7 @@
 class CodebaseIndexJob < ApplicationJob
   queue_as :default
 
-  def perform(repository_id)
+  def perform(repository_id, project_id: nil, user_id: nil)
     repository = Repository.find(repository_id)
     repository.update!(indexing_status: :indexing)
 
@@ -10,6 +10,14 @@ class CodebaseIndexJob < ApplicationJob
     generate_embeddings(repository)
 
     repository.update!(indexing_status: :indexed, last_indexed_at: Time.current)
+
+    if project_id && user_id
+      GenerateRequirementsJob.perform_later(
+        project_id: project_id,
+        user_id: user_id,
+        repository_id: repository.id
+      )
+    end
   rescue StandardError => e
     repository&.update(indexing_status: :failed)
     Rails.logger.error("Codebase indexing failed for repo #{repository_id}: #{e.message}")
@@ -34,10 +42,11 @@ class CodebaseIndexJob < ApplicationJob
 
     Dir.glob(File.join(repo_path, "**", "*")).each do |file_path|
       next if File.directory?(file_path)
-      next if skip_file?(file_path)
 
       relative_path = file_path.sub("#{repo_path}/", "")
+      next if skip_file?(relative_path)
       content = File.read(file_path, encoding: "UTF-8") rescue next
+      next if content.include?("\x00") # skip binary files
       sha = Digest::SHA256.hexdigest(content)
 
       codebase_file = repository.codebase_files.find_or_initialize_by(path: relative_path)
@@ -54,7 +63,12 @@ class CodebaseIndexJob < ApplicationJob
       parser = CodeParser.new(codebase_file)
 
       codebase_file.extracted_artifacts.destroy_all
+      seen_artifacts = Set.new
       parser.parse.each do |artifact_data|
+        key = [artifact_data[:artifact_type], artifact_data[:name]]
+        next if seen_artifacts.include?(key)
+        seen_artifacts.add(key)
+
         codebase_file.extracted_artifacts.create!(
           artifact_type: artifact_data[:artifact_type],
           name: artifact_data[:name],

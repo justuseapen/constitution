@@ -14,7 +14,7 @@ RSpec.describe GenerateRequirementsJob, type: :job do
     Project.seed_documents(project, user)
 
     file = create(:codebase_file, repository: repository, path: "app/models/user.rb", language: "ruby")
-    create(:extracted_artifact, codebase_file: file, artifact_type: :data_model, name: "User")
+    create(:extracted_artifact, codebase_file: file, artifact_type: :model, name: "User")
     create(:extracted_artifact, codebase_file: file, artifact_type: :route, name: "GET /users")
 
     stub_request(:post, "https://openrouter.ai/api/v1/chat/completions")
