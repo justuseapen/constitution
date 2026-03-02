@@ -21,6 +21,8 @@ Rails.application.routes.draw do
     end
   end
 
+  resource :onboarding, only: [:new, :create], controller: "onboarding"
+
   resources :agent_chats, only: [:index, :create]
 
   resources :systems
