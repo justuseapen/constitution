@@ -1,6 +1,8 @@
 class GraphExplorerController < ApplicationController
   before_action :authenticate_user!
 
+  ALLOWED_NODE_TYPES = %w[ServiceSystem Repository ExtractedArtifact].freeze
+
   def show
     @project = current_user.team.projects.find(params[:project_id]) if params[:project_id].present?
   end
@@ -8,6 +10,7 @@ class GraphExplorerController < ApplicationController
   def neighbors
     node_type = params[:node_type]
     node_id = params[:node_id]
+    head(:bad_request) and return unless ALLOWED_NODE_TYPES.include?(node_type)
 
     neighbors = if GraphService.available?
       GraphService.neighbors(node_type, node_id)
@@ -21,6 +24,7 @@ class GraphExplorerController < ApplicationController
   def impact_analysis
     node_type = params[:node_type]
     node_id = params[:node_id]
+    head(:bad_request) and return unless ALLOWED_NODE_TYPES.include?(node_type)
 
     result = if GraphService.available?
       GraphService.impact_analysis(node_type, node_id)
