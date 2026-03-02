@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_02_170447) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_02_171108) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -288,6 +288,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_02_170447) do
     t.datetime "created_at", null: false
     t.text "error_message"
     t.text "log"
+    t.integer "pid"
     t.string "pull_request_url"
     t.bigint "repository_id"
     t.datetime "started_at"

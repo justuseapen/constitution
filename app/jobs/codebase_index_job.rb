@@ -2,24 +2,34 @@ class CodebaseIndexJob < ApplicationJob
   queue_as :default
 
   def perform(repository_id, project_id: nil, user_id: nil)
-    repository = Repository.find(repository_id)
-    repository.update!(indexing_status: :indexing)
+    @repository = Repository.find(repository_id)
+    @project_id = project_id
+    @repository.update!(indexing_status: :indexing)
+    broadcast_progress("cloning", "Cloning repository...")
 
-    clone_or_pull(repository)
-    index_files(repository)
-    generate_embeddings(repository)
+    clone_or_pull(@repository)
+    broadcast_progress("parsing_files", "Parsing files...")
 
-    repository.update!(indexing_status: :indexed, last_indexed_at: Time.current)
+    index_files(@repository)
+    broadcast_progress("generating_embeddings", "Generating embeddings...")
+
+    generate_embeddings(@repository)
+
+    @repository.update!(indexing_status: :indexed, last_indexed_at: Time.current)
+    broadcast_progress("complete", "Indexing complete")
+    notify_user(user_id, "Repository '#{@repository.name}' indexing complete. #{@repository.codebase_files.count} files indexed.")
 
     if project_id && user_id
       GenerateRequirementsJob.perform_later(
         project_id: project_id,
         user_id: user_id,
-        repository_id: repository.id
+        repository_id: @repository.id
       )
     end
   rescue StandardError => e
-    repository&.update(indexing_status: :failed)
+    @repository&.update(indexing_status: :failed)
+    broadcast_progress("failed", "Indexing failed: #{e.message}")
+    notify_user(user_id, "Repository '#{@repository&.name}' indexing failed: #{e.message}")
     Rails.logger.error("Codebase indexing failed for repo #{repository_id}: #{e.message}")
     raise
   end
@@ -40,11 +50,16 @@ class CodebaseIndexJob < ApplicationJob
   def index_files(repository)
     repo_path = Rails.root.join("tmp", "repos", repository.id.to_s)
 
-    Dir.glob(File.join(repo_path, "**", "*")).each do |file_path|
-      next if File.directory?(file_path)
+    all_files = Dir.glob(File.join(repo_path, "**", "*")).reject { |f| File.directory?(f) }
+    total_files = all_files.size
+    processed = 0
 
+    all_files.each do |file_path|
       relative_path = file_path.sub("#{repo_path}/", "")
       next if skip_file?(relative_path)
+
+      processed += 1
+      broadcast_progress("parsing_files", "#{processed}/#{total_files} files") if (processed % 25).zero?
       content = File.read(file_path, encoding: "UTF-8") rescue next
       next if content.include?("\x00") # skip binary files
       sha = Digest::SHA256.hexdigest(content)
@@ -125,5 +140,30 @@ class CodebaseIndexJob < ApplicationJob
       ".json" => "json", ".proto" => "protobuf", ".css" => "css",
       ".html" => "html", ".erb" => "erb", ".md" => "markdown"
     }[ext] || "unknown"
+  end
+
+  def notify_user(user_id, message)
+    return unless user_id
+
+    Notification.create!(
+      user_id: user_id,
+      message: message,
+      notifiable: @repository
+    )
+  rescue StandardError => e
+    Rails.logger.warn("Failed to create notification: #{e.message}")
+  end
+
+  def broadcast_progress(phase, message)
+    return unless @project_id
+
+    ActionCable.server.broadcast("project_#{@project_id}", {
+      type: "indexing_progress",
+      repository_id: @repository.id,
+      repository_name: @repository.name,
+      status: @repository.indexing_status,
+      phase: phase,
+      progress: message
+    })
   end
 end

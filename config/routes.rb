@@ -7,6 +7,7 @@ Rails.application.routes.draw do
     resources :work_orders do
       member do
         post :execute
+        post :cancel_execution
       end
     end
     resources :feedback_items, only: [:index, :show, :update] do

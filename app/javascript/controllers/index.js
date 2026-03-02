@@ -30,3 +30,6 @@ application.register("notifications", NotificationsController)
 
 import ExecutionLogController from "./execution_log_controller"
 application.register("execution-log", ExecutionLogController)
+
+import IndexingProgressController from "./indexing_progress_controller"
+application.register("indexing-progress", IndexingProgressController)

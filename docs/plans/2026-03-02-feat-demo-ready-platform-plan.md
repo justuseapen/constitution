@@ -308,10 +308,10 @@ ProjectChannel.broadcast_to(project, {
 ```
 
 **Acceptance Criteria:**
-- [ ] Project show page updates live during indexing
-- [ ] Shows current phase (cloning, parsing, embeddings)
-- [ ] Shows file count progress during parsing
-- [ ] Status badge updates without page refresh
+- [x] Project show page updates live during indexing
+- [x] Shows current phase (cloning, parsing, embeddings)
+- [x] Shows file count progress during parsing
+- [x] Status badge updates without page refresh
 
 ##### 3.2 Execution Cancellation
 
@@ -326,10 +326,10 @@ ProjectChannel.broadcast_to(project, {
 - `app/views/work_orders/_execution_panel.html.erb` -- add Cancel button (visible when running)
 
 **Acceptance Criteria:**
-- [ ] Running execution shows Cancel button
-- [ ] Cancel sends SIGTERM to claude process
-- [ ] Execution marked as `failed` with "Cancelled by user" message
-- [ ] Work order reverted to `todo`
+- [x] Running execution shows Cancel button
+- [x] Cancel sends SIGTERM to claude process
+- [x] Execution marked as `failed` with "Cancelled by user" message
+- [x] Work order reverted to `todo`
 
 ##### 3.3 Reduce Log Streaming DB Writes
 
@@ -341,9 +341,9 @@ ProjectChannel.broadcast_to(project, {
 - `app/jobs/work_order_execution_job.rb` -- add buffered log writer
 
 **Acceptance Criteria:**
-- [ ] DB writes reduced by ~90% during execution
-- [ ] Log still broadcasts to ActionCable in real-time (unbatched)
-- [ ] Full log persisted to DB on completion/failure
+- [x] DB writes reduced by ~90% during execution
+- [x] Log still broadcasts to ActionCable in real-time (unbatched)
+- [x] Full log persisted to DB on completion/failure
 
 ##### 3.4 Notifications for Async Operations
 
@@ -357,10 +357,10 @@ ProjectChannel.broadcast_to(project, {
 - `app/models/notification.rb` -- verify broadcast_on_create works
 
 **Acceptance Criteria:**
-- [ ] Toast notification appears when indexing completes
-- [ ] Toast notification appears when agent execution completes (with PR link)
-- [ ] Toast notification appears on execution failure
-- [ ] Notifications visible in notification dropdown
+- [x] Toast notification appears when indexing completes
+- [x] Toast notification appears when agent execution completes (with PR link)
+- [x] Toast notification appears on execution failure
+- [x] Notifications visible in notification dropdown
 
 ---
 

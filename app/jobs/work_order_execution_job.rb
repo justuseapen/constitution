@@ -82,6 +82,8 @@ class WorkOrderExecutionJob < ApplicationJob
     repo_path = Rails.root.join("tmp", "repos", repository.id.to_s)
     channel = "execution_#{@execution.id}"
     output = ""
+    lines_since_flush = 0
+    last_flush = Time.current
 
     Timeout.timeout(TIMEOUT) do
       IO.popen(
@@ -90,16 +92,26 @@ class WorkOrderExecutionJob < ApplicationJob
         chdir: repo_path.to_s,
         err: [:child, :out]
       ) do |io|
+        @execution.update_column(:pid, io.pid)
         io.write(prompt)
         io.close_write
 
         io.each_line do |line|
           output += line
-          @execution.update_column(:log, output)
+          lines_since_flush += 1
           ActionCable.server.broadcast(channel, { type: "log", content: line })
+
+          if lines_since_flush >= 50 || Time.current - last_flush >= 2
+            @execution.update_column(:log, output)
+            lines_since_flush = 0
+            last_flush = Time.current
+          end
         end
       end
     end
+
+    # Final flush to ensure all output is persisted
+    @execution.update_column(:log, output)
 
     unless $?.success?
       ActionCable.server.broadcast(channel, { type: "error", content: "Claude process exited with status #{$?.exitstatus}" })
@@ -129,6 +141,9 @@ class WorkOrderExecutionJob < ApplicationJob
       completed_at: Time.current
     )
     @work_order.update!(status: :review)
+
+    pr_msg = pr_url ? " PR: #{pr_url}" : ""
+    notify_triggered_user("Work order '#{@work_order.title}' completed.#{pr_msg}")
   end
 
   def fail_execution(message, log: nil)
@@ -139,5 +154,19 @@ class WorkOrderExecutionJob < ApplicationJob
       completed_at: Time.current
     )
     @work_order&.update!(status: :todo) if @work_order&.in_progress?
+
+    notify_triggered_user("Work order '#{@work_order&.title}' execution failed: #{message}")
+  end
+
+  def notify_triggered_user(message)
+    return unless @execution&.triggered_by_id
+
+    Notification.create!(
+      user_id: @execution.triggered_by_id,
+      message: message,
+      notifiable: @work_order
+    )
+  rescue StandardError => e
+    Rails.logger.warn("Failed to create notification: #{e.message}")
   end
 end
