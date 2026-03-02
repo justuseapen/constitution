@@ -49,6 +49,30 @@ RSpec.describe WorkOrderPromptBuilder do
     end
   end
 
+  describe "#branch_name" do
+    it "includes work order id and parameterized title" do
+      builder = described_class.new(work_order: work_order, repository: repository)
+      expect(builder.branch_name).to start_with("wo-#{work_order.id}-add-login-page")
+    end
+
+    it "includes execution id when execution is provided" do
+      execution = create(:work_order_execution, work_order: work_order, triggered_by: create(:user, team: team))
+      builder = described_class.new(work_order: work_order, repository: repository, execution: execution)
+      expect(builder.branch_name).to end_with("-e#{execution.id}")
+    end
+
+    it "produces unique branch names for different executions" do
+      user = create(:user, team: team)
+      exec1 = create(:work_order_execution, work_order: work_order, triggered_by: user)
+      exec2 = create(:work_order_execution, work_order: work_order, triggered_by: user)
+
+      branch1 = described_class.new(work_order: work_order, repository: repository, execution: exec1).branch_name
+      branch2 = described_class.new(work_order: work_order, repository: repository, execution: exec2).branch_name
+
+      expect(branch1).not_to eq(branch2)
+    end
+  end
+
   describe "#select_repository" do
     it "returns the only repo when project has one" do
       result = described_class.new(work_order: work_order, repository: nil).select_repository([repository])

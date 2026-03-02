@@ -1,3 +1,5 @@
+require "open3"
+
 module Importers
   class GitImporter
     def initialize(project:, user:, url:, service_system: nil)
@@ -40,6 +42,13 @@ module Importers
     end
 
     def detect_default_branch
+      output, status = Open3.capture2("git", "ls-remote", "--symref", @url, "HEAD")
+      if status.success? && output.match?(%r{ref: refs/heads/(\S+)\s+HEAD})
+        output.match(%r{ref: refs/heads/(\S+)\s+HEAD})[1]
+      else
+        "main"
+      end
+    rescue StandardError
       "main"
     end
   end

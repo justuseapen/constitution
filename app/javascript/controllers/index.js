@@ -27,3 +27,6 @@ application.register("presence", PresenceController)
 
 import NotificationsController from "./notifications_controller"
 application.register("notifications", NotificationsController)
+
+import ExecutionLogController from "./execution_log_controller"
+application.register("execution-log", ExecutionLogController)

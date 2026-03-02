@@ -23,12 +23,12 @@ class WorkOrderExecutionJob < ApplicationJob
 
     start_execution
 
-    prompt_builder = WorkOrderPromptBuilder.new(work_order: @work_order, repository: nil)
+    prompt_builder = WorkOrderPromptBuilder.new(work_order: @work_order, repository: nil, execution: @execution)
     repository = prompt_builder.select_repository(repositories)
-    branch = "wo-#{@work_order.id}-#{@work_order.title.parameterize[0..40]}"
-    @execution.update!(repository: repository, branch_name: branch)
 
-    prompt_builder = WorkOrderPromptBuilder.new(work_order: @work_order, repository: repository)
+    prompt_builder = WorkOrderPromptBuilder.new(work_order: @work_order, repository: repository, execution: @execution)
+    @execution.update!(repository: repository, branch_name: prompt_builder.branch_name)
+
     prompt = prompt_builder.build
 
     prepare_repo(repository)
@@ -148,5 +148,6 @@ class WorkOrderExecutionJob < ApplicationJob
       log: log || @execution&.log,
       completed_at: Time.current
     )
+    @work_order&.update!(status: :todo) if @work_order&.in_progress?
   end
 end

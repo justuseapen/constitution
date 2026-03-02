@@ -73,4 +73,19 @@ RSpec.describe WorkOrderExecutionJob, type: :job do
     expect(execution.status).to eq("failed")
     expect(execution.error_message).to include("tests won't pass")
   end
+
+  it "reverts work order to todo on execution failure" do
+    allow_any_instance_of(described_class).to receive(:claude_available?).and_return(true)
+    allow_any_instance_of(described_class).to receive(:find_repositories).and_return([repository])
+    allow_any_instance_of(described_class).to receive(:prepare_repo)
+    allow_any_instance_of(described_class).to receive(:execute_claude).and_return("<constitution>FAILED: compile error</constitution>")
+
+    # start_execution sets work_order to in_progress
+    work_order.update!(status: :in_progress)
+
+    described_class.perform_now(execution.id)
+
+    work_order.reload
+    expect(work_order.status).to eq("todo")
+  end
 end

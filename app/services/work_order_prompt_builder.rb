@@ -2,9 +2,10 @@ class WorkOrderPromptBuilder
   MAX_CONTEXT_TOKENS = 8000
   CHARS_PER_TOKEN = 4
 
-  def initialize(work_order:, repository:)
+  def initialize(work_order:, repository:, execution: nil)
     @work_order = work_order
     @repository = repository
+    @execution = execution
   end
 
   def build
@@ -27,6 +28,11 @@ class WorkOrderPromptBuilder
         artifact_words.any? { |w| words.include?(w.downcase) }
       end
     end
+  end
+
+  def branch_name
+    base = "wo-#{@work_order.id}-#{@work_order.title.parameterize[0..40]}"
+    @execution ? "#{base}-e#{@execution.id}" : base
   end
 
   private
@@ -75,12 +81,10 @@ class WorkOrderPromptBuilder
   end
 
   def instructions_section
-    branch_name = "wo-#{@work_order.id}-#{@work_order.title.parameterize[0..40]}"
-
     <<~INSTRUCTIONS
       ## Instructions
       1. You are working in this repository. It is already cloned and on the default branch.
-      2. Create a feature branch: `#{branch_name}`
+      2. Create a feature branch: `#{self.branch_name}`
       3. Implement the change described above.
       4. Run the project's test suite. Fix any failures your changes introduce.
       5. Commit your changes with a descriptive message.
