@@ -43,10 +43,10 @@ class GraphService
     def neighbors(label, postgres_id, direction: :both)
       return [] unless available?
       arrow = case direction
-              when :outgoing then "-[r]->"
-              when :incoming then "<-[r]-"
-              else "-[r]-"
-              end
+      when :outgoing then "-[r]->"
+      when :incoming then "<-[r]-"
+      else "-[r]-"
+      end
 
       results = execute(
         "MATCH (n:#{label} {postgres_id: $id})#{arrow}(m) " \

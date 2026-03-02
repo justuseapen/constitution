@@ -8,6 +8,6 @@ class CreateAgentConversations < ActiveRecord::Migration[8.1]
       t.string :model_name
       t.timestamps
     end
-    add_index :agent_conversations, [:conversable_type, :conversable_id]
+    add_index :agent_conversations, [ :conversable_type, :conversable_id ]
   end
 end

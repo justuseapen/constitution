@@ -10,7 +10,7 @@ RSpec.describe Importers::GitImporter do
       allow(GraphService).to receive(:create_node)
       allow(Open3).to receive(:capture2)
         .with("git", "ls-remote", "--symref", anything, "HEAD")
-        .and_return(["ref: refs/heads/main\tHEAD\n", double(success?: true)])
+        .and_return([ "ref: refs/heads/main\tHEAD\n", double(success?: true) ])
     end
 
     it "creates a repository and triggers indexing" do
@@ -100,7 +100,7 @@ RSpec.describe Importers::GitImporter do
       allow(CodebaseIndexJob).to receive(:perform_later)
       allow(Open3).to receive(:capture2)
         .with("git", "ls-remote", "--symref", anything, "HEAD")
-        .and_return(["ref: refs/heads/master\tHEAD\n", double(success?: true)])
+        .and_return([ "ref: refs/heads/master\tHEAD\n", double(success?: true) ])
 
       importer = Importers::GitImporter.new(
         project: project,
@@ -116,7 +116,7 @@ RSpec.describe Importers::GitImporter do
       allow(CodebaseIndexJob).to receive(:perform_later)
       allow(Open3).to receive(:capture2)
         .with("git", "ls-remote", "--symref", anything, "HEAD")
-        .and_return(["", double(success?: false)])
+        .and_return([ "", double(success?: false) ])
 
       importer = Importers::GitImporter.new(
         project: project,

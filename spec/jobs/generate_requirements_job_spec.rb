@@ -19,7 +19,7 @@ RSpec.describe GenerateRequirementsJob, type: :job do
 
     stub_request(:post, "https://openrouter.ai/api/v1/chat/completions")
       .to_return(status: 200, body: {
-        choices: [{ message: { content: "<h2>Overview</h2><p>AI-generated content</p>" } }]
+        choices: [ { message: { content: "<h2>Overview</h2><p>AI-generated content</p>" } } ]
       }.to_json, headers: { "Content-Type" => "application/json" })
   end
 

@@ -34,11 +34,11 @@ RSpec.describe MrReviewService do
 
   let(:ai_response) do
     {
-      "choices" => [{
+      "choices" => [ {
         "message" => {
           "content" => '{"overall":"approve","summary":"Looks good","criteria_met":[],"issues":[]}'
         }
-      }]
+      } ]
     }
   end
 

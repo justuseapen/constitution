@@ -9,7 +9,7 @@ RSpec.describe AgentService do
   before do
     stub_request(:post, "https://openrouter.ai/api/v1/chat/completions")
       .to_return(status: 200, body: {
-        choices: [{ message: { content: "Here is my analysis..." } }]
+        choices: [ { message: { content: "Here is my analysis..." } } ]
       }.to_json, headers: { "Content-Type" => "application/json" })
   end
 

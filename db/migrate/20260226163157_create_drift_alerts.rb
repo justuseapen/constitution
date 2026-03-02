@@ -10,8 +10,8 @@ class CreateDriftAlerts < ActiveRecord::Migration[8.1]
       t.integer :status, default: 0
       t.timestamps
     end
-    add_index :drift_alerts, [:source_type, :source_id]
-    add_index :drift_alerts, [:target_type, :target_id]
+    add_index :drift_alerts, [ :source_type, :source_id ]
+    add_index :drift_alerts, [ :target_type, :target_id ]
     add_index :drift_alerts, :status
   end
 end

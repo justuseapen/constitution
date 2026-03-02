@@ -99,4 +99,4 @@ group :test do
   gem "vcr", "~> 6.2"
 end
 
-gem "dotenv-rails", "~> 3.2", :groups => [:development, :test]
+gem "dotenv-rails", "~> 3.2", groups: [ :development, :test ]

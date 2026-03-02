@@ -95,7 +95,7 @@ RSpec.describe WorkOrderPromptBuilder do
 
   describe "#select_repository" do
     it "returns the only repo when project has one" do
-      result = described_class.new(work_order: work_order, repository: nil).select_repository([repository])
+      result = described_class.new(work_order: work_order, repository: nil).select_repository([ repository ])
       expect(result).to eq(repository)
     end
 
@@ -109,7 +109,7 @@ RSpec.describe WorkOrderPromptBuilder do
       file_b = create(:codebase_file, repository: repo_b, path: "app/models/invoice.rb")
       create(:extracted_artifact, codebase_file: file_b, artifact_type: :model, name: "Invoice")
 
-      result = described_class.new(work_order: work_order, repository: nil).select_repository([repo_a, repo_b])
+      result = described_class.new(work_order: work_order, repository: nil).select_repository([ repo_a, repo_b ])
       expect(result).to eq(repo_a)
     end
   end

@@ -1,6 +1,6 @@
 class SystemsController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_system, only: [:show, :edit, :update, :destroy, :architecture, :generate_diagram]
+  before_action :set_system, only: [ :show, :edit, :update, :destroy, :architecture, :generate_diagram ]
 
   def index
     @systems = current_user.team.service_systems.includes(:outgoing_dependencies)

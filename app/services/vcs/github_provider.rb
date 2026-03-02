@@ -26,7 +26,7 @@ module Vcs
     end
 
     def post_review(pr_identifier:, body:, comments: [])
-      args = ["gh", "pr", "review", pr_identifier.to_s, "--comment", "--body", body]
+      args = [ "gh", "pr", "review", pr_identifier.to_s, "--comment", "--body", body ]
       _output, status = Open3.capture2e(*args, chdir: repo_path)
       status.success?
     end

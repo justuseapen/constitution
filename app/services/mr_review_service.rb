@@ -63,7 +63,7 @@ class MrReviewService
     response = OPENROUTER_CLIENT.chat(
       parameters: {
         model: "anthropic/claude-sonnet-4-5",
-        messages: [{ role: "user", content: prompt }],
+        messages: [ { role: "user", content: prompt } ],
         max_tokens: 2000
       }
     )
@@ -111,7 +111,7 @@ class MrReviewService
   end
 
   def format_review(static_findings, ai_findings)
-    parts = ["## Constitution QA Review\n"]
+    parts = [ "## Constitution QA Review\n" ]
 
     if ai_findings[:summary].present?
       parts << "**Summary:** #{ai_findings[:summary]}\n"

@@ -8,7 +8,7 @@ RSpec.describe Vcs::GithubProvider do
   describe "#create_merge_request" do
     it "creates a PR via gh CLI" do
       allow(Open3).to receive(:capture2e).and_return(
-        ["https://github.com/owner/repo/pull/42\n", double(success?: true)]
+        [ "https://github.com/owner/repo/pull/42\n", double(success?: true) ]
       )
 
       url = provider.create_merge_request(
@@ -29,7 +29,7 @@ RSpec.describe Vcs::GithubProvider do
 
     it "returns nil on failure" do
       allow(Open3).to receive(:capture2e).and_return(
-        ["error message", double(success?: false)]
+        [ "error message", double(success?: false) ]
       )
 
       url = provider.create_merge_request(branch: "feat/test", title: "Test", body: "Body")
@@ -40,7 +40,7 @@ RSpec.describe Vcs::GithubProvider do
   describe "#diff" do
     it "fetches PR diff via gh CLI" do
       allow(Open3).to receive(:capture2e).and_return(
-        ["diff content here", double(success?: true)]
+        [ "diff content here", double(success?: true) ]
       )
 
       result = provider.diff(pr_identifier: "42")
@@ -51,28 +51,28 @@ RSpec.describe Vcs::GithubProvider do
   describe "#pr_status" do
     it "returns :open for open PRs" do
       json = '{"state":"OPEN","reviewDecision":""}'
-      allow(Open3).to receive(:capture2e).and_return([json, double(success?: true)])
+      allow(Open3).to receive(:capture2e).and_return([ json, double(success?: true) ])
 
       expect(provider.pr_status(pr_identifier: "42")).to eq(:open)
     end
 
     it "returns :merged for merged PRs" do
       json = '{"state":"MERGED","reviewDecision":""}'
-      allow(Open3).to receive(:capture2e).and_return([json, double(success?: true)])
+      allow(Open3).to receive(:capture2e).and_return([ json, double(success?: true) ])
 
       expect(provider.pr_status(pr_identifier: "42")).to eq(:merged)
     end
 
     it "returns :approved when review approved" do
       json = '{"state":"OPEN","reviewDecision":"APPROVED"}'
-      allow(Open3).to receive(:capture2e).and_return([json, double(success?: true)])
+      allow(Open3).to receive(:capture2e).and_return([ json, double(success?: true) ])
 
       expect(provider.pr_status(pr_identifier: "42")).to eq(:approved)
     end
 
     it "returns :changes_requested when changes requested" do
       json = '{"state":"OPEN","reviewDecision":"CHANGES_REQUESTED"}'
-      allow(Open3).to receive(:capture2e).and_return([json, double(success?: true)])
+      allow(Open3).to receive(:capture2e).and_return([ json, double(success?: true) ])
 
       expect(provider.pr_status(pr_identifier: "42")).to eq(:changes_requested)
     end

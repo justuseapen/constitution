@@ -6,8 +6,8 @@ class PrStatusTrackingJob < ApplicationJob
   def perform
     open_executions = WorkOrderExecution
       .where(status: :completed)
-      .where.not(pull_request_url: [nil, ""])
-      .where(pr_status: [nil, :pr_open, :pr_approved, :pr_changes_requested])
+      .where.not(pull_request_url: [ nil, "" ])
+      .where(pr_status: [ nil, :pr_open, :pr_approved, :pr_changes_requested ])
       .where.not(repository: nil)
       .includes(:work_order, :repository, :triggered_by)
 

@@ -8,7 +8,7 @@ class CreateSystemDependencies < ActiveRecord::Migration[8.1]
       t.jsonb :metadata, default: {}
       t.timestamps
     end
-    add_index :system_dependencies, [:source_system_id, :target_system_id, :dependency_type],
+    add_index :system_dependencies, [ :source_system_id, :target_system_id, :dependency_type ],
               unique: true, name: "idx_sys_deps_unique"
   end
 end

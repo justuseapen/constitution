@@ -6,6 +6,6 @@ class CreateProjectRepositories < ActiveRecord::Migration[8.1]
 
       t.timestamps
     end
-    add_index :project_repositories, [:project_id, :repository_id], unique: true
+    add_index :project_repositories, [ :project_id, :repository_id ], unique: true
   end
 end

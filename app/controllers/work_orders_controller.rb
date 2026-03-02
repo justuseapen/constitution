@@ -1,7 +1,7 @@
 class WorkOrdersController < ApplicationController
   before_action :authenticate_user!
   before_action :set_project
-  before_action :set_work_order, only: [:show, :edit, :update, :destroy, :execute, :cancel_execution]
+  before_action :set_work_order, only: [ :show, :edit, :update, :destroy, :execute, :cancel_execution ]
 
   def index
     @work_orders = @project.work_orders.includes(:assignee, :phase).order(:position)
@@ -44,7 +44,7 @@ class WorkOrdersController < ApplicationController
   end
 
   def execute
-    if @work_order.executions.where(status: [:queued, :running]).exists?
+    if @work_order.executions.where(status: [ :queued, :running ]).exists?
       redirect_to project_work_order_path(@project, @work_order), alert: "An execution is already running."
       return
     end
@@ -60,7 +60,7 @@ class WorkOrdersController < ApplicationController
   end
 
   def cancel_execution
-    execution = @work_order.executions.where(status: [:queued, :running]).order(created_at: :desc).first
+    execution = @work_order.executions.where(status: [ :queued, :running ]).order(created_at: :desc).first
 
     unless execution
       redirect_to project_work_order_path(@project, @work_order), alert: "No running execution to cancel."

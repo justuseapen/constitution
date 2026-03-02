@@ -35,7 +35,7 @@ RSpec.describe WorkOrderExecutionJob, type: :job do
 
   it "updates work order status to review on success" do
     allow_any_instance_of(described_class).to receive(:claude_available?).and_return(true)
-    allow_any_instance_of(described_class).to receive(:find_repositories).and_return([repository])
+    allow_any_instance_of(described_class).to receive(:find_repositories).and_return([ repository ])
     allow_any_instance_of(described_class).to receive(:prepare_repo)
     allow_any_instance_of(described_class).to receive(:execute_claude).and_return("<constitution>COMPLETE</constitution>")
     allow_any_instance_of(described_class).to receive(:open_pull_request).and_return("https://github.com/example/repo/pull/1")
@@ -48,7 +48,7 @@ RSpec.describe WorkOrderExecutionJob, type: :job do
 
   it "marks execution completed on success signal" do
     allow_any_instance_of(described_class).to receive(:claude_available?).and_return(true)
-    allow_any_instance_of(described_class).to receive(:find_repositories).and_return([repository])
+    allow_any_instance_of(described_class).to receive(:find_repositories).and_return([ repository ])
     allow_any_instance_of(described_class).to receive(:prepare_repo)
     allow_any_instance_of(described_class).to receive(:execute_claude).and_return("Done.\n<constitution>COMPLETE</constitution>")
     allow_any_instance_of(described_class).to receive(:open_pull_request).and_return("https://github.com/example/repo/pull/1")
@@ -63,7 +63,7 @@ RSpec.describe WorkOrderExecutionJob, type: :job do
 
   it "marks execution failed on failure signal" do
     allow_any_instance_of(described_class).to receive(:claude_available?).and_return(true)
-    allow_any_instance_of(described_class).to receive(:find_repositories).and_return([repository])
+    allow_any_instance_of(described_class).to receive(:find_repositories).and_return([ repository ])
     allow_any_instance_of(described_class).to receive(:prepare_repo)
     allow_any_instance_of(described_class).to receive(:execute_claude).and_return("<constitution>FAILED: tests won't pass</constitution>")
 
@@ -76,7 +76,7 @@ RSpec.describe WorkOrderExecutionJob, type: :job do
 
   it "reverts work order to todo on execution failure" do
     allow_any_instance_of(described_class).to receive(:claude_available?).and_return(true)
-    allow_any_instance_of(described_class).to receive(:find_repositories).and_return([repository])
+    allow_any_instance_of(described_class).to receive(:find_repositories).and_return([ repository ])
     allow_any_instance_of(described_class).to receive(:prepare_repo)
     allow_any_instance_of(described_class).to receive(:execute_claude).and_return("<constitution>FAILED: compile error</constitution>")
 

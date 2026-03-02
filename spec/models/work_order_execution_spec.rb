@@ -72,7 +72,7 @@ RSpec.describe WorkOrderExecution, type: :model do
     it "orders by created_at descending" do
       old = create(:work_order_execution, created_at: 2.days.ago)
       new_exec = create(:work_order_execution, created_at: 1.day.ago)
-      expect(WorkOrderExecution.latest_first).to eq([new_exec, old])
+      expect(WorkOrderExecution.latest_first).to eq([ new_exec, old ])
     end
   end
 end

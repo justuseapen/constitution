@@ -88,10 +88,10 @@ class WorkOrderExecutionJob < ApplicationJob
 
     Timeout.timeout(TIMEOUT) do
       IO.popen(
-        ["claude", "--dangerously-skip-permissions", "--print"],
+        [ "claude", "--dangerously-skip-permissions", "--print" ],
         "r+",
         chdir: repo_path.to_s,
-        err: [:child, :out]
+        err: [ :child, :out ]
       ) do |io|
         @execution.update_column(:pid, io.pid)
         io.write(prompt)

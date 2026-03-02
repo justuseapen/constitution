@@ -82,7 +82,7 @@ class CodebaseIndexJob < ApplicationJob
       codebase_file.extracted_artifacts.destroy_all
       seen_artifacts = Set.new
       parser.parse.each do |artifact_data|
-        key = [artifact_data[:artifact_type], artifact_data[:name]]
+        key = [ artifact_data[:artifact_type], artifact_data[:name] ]
         next if seen_artifacts.include?(key)
         seen_artifacts.add(key)
 

@@ -38,7 +38,7 @@ class GenerateRequirementsJob < ApplicationJob
       response = OPENROUTER_CLIENT.chat(
         parameters: {
           model: "anthropic/claude-sonnet-4.5",
-          messages: [{ role: "user", content: prompt }]
+          messages: [ { role: "user", content: prompt } ]
         }
       )
     rescue Faraday::Error => e

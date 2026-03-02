@@ -11,23 +11,23 @@ class SystemDependency < ApplicationRecord
     sdk: 5
   }
 
-  validates :source_system_id, uniqueness: { scope: [:target_system_id, :dependency_type] }
+  validates :source_system_id, uniqueness: { scope: [ :target_system_id, :dependency_type ] }
 
-  after_commit :sync_edge_to_graph, on: [:create, :update]
+  after_commit :sync_edge_to_graph, on: [ :create, :update ]
   after_commit :remove_edge_from_graph, on: :destroy
 
   private
 
   def sync_edge_to_graph
     edge_type = case dependency_type
-                when "http_api" then "CALLS_API"
-                when "rabbitmq" then "PUBLISHES_TO"
-                when "grpc" then "CALLS_GRPC"
-                when "database_shared" then "READS_FROM"
-                when "event_bus" then "PUBLISHES_TO"
-                when "sdk" then "USES_SDK"
-                else "DEPENDS_ON"
-                end
+    when "http_api" then "CALLS_API"
+    when "rabbitmq" then "PUBLISHES_TO"
+    when "grpc" then "CALLS_GRPC"
+    when "database_shared" then "READS_FROM"
+    when "event_bus" then "PUBLISHES_TO"
+    when "sdk" then "USES_SDK"
+    else "DEPENDS_ON"
+    end
 
     GraphService.create_edge(
       from: { label: "System", postgres_id: source_system_id },

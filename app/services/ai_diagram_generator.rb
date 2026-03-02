@@ -42,12 +42,12 @@ class AiDiagramGenerator
 
       # Find artifacts whose name appears in the route's file content
       content = route_artifact.codebase_file.content&.downcase || ""
-      [a.name.underscore, a.name.camelize, a.name].map(&:downcase).any? { |n| content.include?(n) }
+      [ a.name.underscore, a.name.camelize, a.name ].map(&:downcase).any? { |n| content.include?(n) }
     end
   end
 
   def build_source_context(route_artifact, related_artifacts)
-    parts = ["### #{route_artifact.name} (#{route_artifact.codebase_file.path})\n"]
+    parts = [ "### #{route_artifact.name} (#{route_artifact.codebase_file.path})\n" ]
     parts << route_artifact.codebase_file.content.to_s.truncate(2000)
 
     related_artifacts.first(5).each do |a|
@@ -77,7 +77,7 @@ class AiDiagramGenerator
     response = OPENROUTER_CLIENT.chat(
       parameters: {
         model: "anthropic/claude-sonnet-4-5",
-        messages: [{ role: "user", content: prompt }],
+        messages: [ { role: "user", content: prompt } ],
         max_tokens: 2000
       }
     )

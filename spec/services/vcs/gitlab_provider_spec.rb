@@ -17,7 +17,7 @@ RSpec.describe Vcs::GitlabProvider do
 
     it "creates an MR via glab CLI" do
       allow(Open3).to receive(:capture2e).and_return(
-        ["https://gitlab.com/owner/repo/-/merge_requests/42\n", double(success?: true)]
+        [ "https://gitlab.com/owner/repo/-/merge_requests/42\n", double(success?: true) ]
       )
 
       url = provider.create_merge_request(
@@ -41,7 +41,7 @@ RSpec.describe Vcs::GitlabProvider do
 
     it "returns nil on failure" do
       allow(Open3).to receive(:capture2e).and_return(
-        ["error message", double(success?: false)]
+        [ "error message", double(success?: false) ]
       )
 
       url = provider.create_merge_request(branch: "feat/test", title: "Test", body: "Body")
@@ -68,21 +68,21 @@ RSpec.describe Vcs::GitlabProvider do
   describe "#pr_status" do
     it "returns :open for open MRs" do
       json = '{"state":"opened"}'
-      allow(Open3).to receive(:capture2e).and_return([json, double(success?: true)])
+      allow(Open3).to receive(:capture2e).and_return([ json, double(success?: true) ])
 
       expect(provider.pr_status(pr_identifier: "42")).to eq(:open)
     end
 
     it "returns :merged for merged MRs" do
       json = '{"state":"merged"}'
-      allow(Open3).to receive(:capture2e).and_return([json, double(success?: true)])
+      allow(Open3).to receive(:capture2e).and_return([ json, double(success?: true) ])
 
       expect(provider.pr_status(pr_identifier: "42")).to eq(:merged)
     end
 
     it "returns :closed for closed MRs" do
       json = '{"state":"closed"}'
-      allow(Open3).to receive(:capture2e).and_return([json, double(success?: true)])
+      allow(Open3).to receive(:capture2e).and_return([ json, double(success?: true) ])
 
       expect(provider.pr_status(pr_identifier: "42")).to eq(:closed)
     end

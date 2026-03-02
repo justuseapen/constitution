@@ -33,7 +33,7 @@
       <% else %>
         <!-- Regular prose content for non-diagram blueprints -->
         <div class="prose max-w-none">
-          <%= @blueprint.body&.html_safe %>
+          <%= sanitize @blueprint.body %>
         </div>
       <% end %>
     </div>

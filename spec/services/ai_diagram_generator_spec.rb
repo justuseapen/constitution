@@ -12,9 +12,9 @@ RSpec.describe AiDiagramGenerator do
 
     it "generates a sequence diagram via AI" do
       allow(OPENROUTER_CLIENT).to receive(:chat).and_return({
-        "choices" => [{
+        "choices" => [ {
           "message" => { "content" => "sequenceDiagram\n    Client->>Controller: GET /users\n    Controller->>Model: User.all" }
-        }]
+        } ]
       })
 
       result = generator.sequence_diagram_for_route(artifact)
@@ -23,9 +23,9 @@ RSpec.describe AiDiagramGenerator do
 
     it "strips markdown fences from response" do
       allow(OPENROUTER_CLIENT).to receive(:chat).and_return({
-        "choices" => [{
+        "choices" => [ {
           "message" => { "content" => "```mermaid\nsequenceDiagram\n    A->>B: call\n```" }
-        }]
+        } ]
       })
 
       result = generator.sequence_diagram_for_route(artifact)

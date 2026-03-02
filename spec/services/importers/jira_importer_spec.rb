@@ -13,7 +13,7 @@ RSpec.describe Importers::JiraImporter do
           "key" => "PROJ-1",
           "fields" => {
             "summary" => "Epic: User Authentication",
-            "description" => { "type" => "doc", "content" => [{ "type" => "paragraph", "content" => [{ "type" => "text", "text" => "Auth epic" }] }] },
+            "description" => { "type" => "doc", "content" => [ { "type" => "paragraph", "content" => [ { "type" => "text", "text" => "Auth epic" } ] } ] },
             "issuetype" => { "name" => "Epic" },
             "status" => { "name" => "In Progress" },
             "priority" => { "name" => "High" }
@@ -23,7 +23,7 @@ RSpec.describe Importers::JiraImporter do
           "key" => "PROJ-2",
           "fields" => {
             "summary" => "Implement login form",
-            "description" => { "type" => "doc", "content" => [{ "type" => "paragraph", "content" => [{ "type" => "text", "text" => "Build login" }] }] },
+            "description" => { "type" => "doc", "content" => [ { "type" => "paragraph", "content" => [ { "type" => "text", "text" => "Build login" } ] } ] },
             "issuetype" => { "name" => "Story" },
             "status" => { "name" => "To Do" },
             "priority" => { "name" => "Medium" },

@@ -25,7 +25,7 @@ RSpec.describe DriftDetectionJob, type: :job do
 
         allow(GraphService).to receive(:execute)
           .with(/Document.*DEFINES_FEATURE.*Blueprint/, any_args)
-          .and_return([{ doc_id: doc.id, bp_id: bp.id }])
+          .and_return([ { doc_id: doc.id, bp_id: bp.id } ])
 
         allow(GraphService).to receive(:execute)
           .with(/Blueprint.*IMPLEMENTED_BY.*WorkOrder/, any_args)
@@ -47,7 +47,7 @@ RSpec.describe DriftDetectionJob, type: :job do
 
         allow(GraphService).to receive(:execute)
           .with(/Document.*DEFINES_FEATURE.*Blueprint/, any_args)
-          .and_return([{ doc_id: doc.id, bp_id: bp.id }])
+          .and_return([ { doc_id: doc.id, bp_id: bp.id } ])
         allow(GraphService).to receive(:execute)
           .with(/Blueprint.*IMPLEMENTED_BY.*WorkOrder/, any_args)
           .and_return([])

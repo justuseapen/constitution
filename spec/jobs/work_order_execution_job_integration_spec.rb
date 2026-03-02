@@ -17,7 +17,7 @@ RSpec.describe "Work Order Execution Integration", type: :job do
 
   it "selects the correct repository based on artifact overlap" do
     builder = WorkOrderPromptBuilder.new(work_order: work_order, repository: nil)
-    result = builder.select_repository([repository])
+    result = builder.select_repository([ repository ])
     expect(result).to eq(repository)
   end
 

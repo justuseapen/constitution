@@ -1,7 +1,7 @@
 class DocumentsController < ApplicationController
   before_action :authenticate_user!
   before_action :set_project
-  before_action :set_document, only: [:show, :edit, :update, :destroy]
+  before_action :set_document, only: [ :show, :edit, :update, :destroy ]
 
   def index
     @documents = @project.documents.order(created_at: :desc)

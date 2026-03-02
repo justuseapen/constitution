@@ -14,27 +14,27 @@ Rails.application.routes.draw do
         post :cancel_execution
       end
     end
-    resources :feedback_items, only: [:index, :show, :update] do
+    resources :feedback_items, only: [ :index, :show, :update ] do
       member do
         post :create_work_order
       end
     end
-    resources :repositories, only: [:create, :destroy], controller: "project_repositories" do
+    resources :repositories, only: [ :create, :destroy ], controller: "project_repositories" do
       member do
         post :retry_index
       end
     end
   end
 
-  resource :onboarding, only: [:new, :create], controller: "onboarding"
+  resource :onboarding, only: [ :new, :create ], controller: "onboarding"
 
-  resource :graph_explorer, only: [:show], controller: "graph_explorer" do
+  resource :graph_explorer, only: [ :show ], controller: "graph_explorer" do
     get :neighbors
     get :impact_analysis
     get :root_nodes
   end
 
-  resources :agent_chats, only: [:index, :create]
+  resources :agent_chats, only: [ :index, :create ]
 
   resources :systems do
     member do
@@ -43,7 +43,7 @@ Rails.application.routes.draw do
     end
   end
 
-  resources :notifications, only: [:index] do
+  resources :notifications, only: [ :index ] do
     collection do
       post :mark_read
       get :unread_count
@@ -52,7 +52,7 @@ Rails.application.routes.draw do
 
   namespace :api do
     namespace :v1 do
-      resources :feedback, only: [:create], controller: "feedback"
+      resources :feedback, only: [ :create ], controller: "feedback"
     end
   end
 

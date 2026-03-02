@@ -1,7 +1,7 @@
 class FeedbackItemsController < ApplicationController
   before_action :authenticate_user!
   before_action :set_project
-  before_action :set_feedback_item, only: [:show, :update, :create_work_order]
+  before_action :set_feedback_item, only: [ :show, :update, :create_work_order ]
 
   def index
     @feedback_items = @project.feedback_items.order(created_at: :desc)
