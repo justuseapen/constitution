@@ -2,15 +2,17 @@ class WorkOrderPromptBuilder
   MAX_CONTEXT_TOKENS = 8000
   CHARS_PER_TOKEN = 4
 
-  def initialize(work_order:, repository:, execution: nil)
+  def initialize(work_order:, repository:, execution: nil, include_feedback: false)
     @work_order = work_order
     @repository = repository
     @execution = execution
+    @include_feedback = include_feedback
   end
 
   def build
     sections = []
     sections << work_order_section
+    sections << feedback_section if @include_feedback
     sections << artifacts_section if @repository
     sections << instructions_section
     sections.compact.join("\n\n")
@@ -46,6 +48,35 @@ class WorkOrderPromptBuilder
       section += "**Acceptance Criteria:**\n#{@work_order.acceptance_criteria}\n"
     end
     section
+  end
+
+  def feedback_section
+    previous_execution = @work_order.executions
+      .where(status: :completed)
+      .where.not(pull_request_url: nil)
+      .order(created_at: :desc)
+      .first
+
+    return nil unless previous_execution
+
+    feedback_items = FeedbackItem.where(
+      project: @work_order.project,
+      source: "qa_pipeline"
+    ).where("technical_context->>'execution_id' = ?", previous_execution.id.to_s)
+      .order(created_at: :desc)
+      .limit(1)
+
+    return nil if feedback_items.empty?
+
+    feedback = feedback_items.first
+    <<~FEEDBACK
+      ## Previous Attempt Feedback
+      The previous implementation received the following review feedback:
+
+      #{feedback.body}
+
+      Address these issues in your implementation.
+    FEEDBACK
   end
 
   def artifacts_section

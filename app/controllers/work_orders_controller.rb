@@ -54,7 +54,7 @@ class WorkOrdersController < ApplicationController
       status: :queued
     )
 
-    WorkOrderExecutionJob.perform_later(execution.id)
+    WorkOrderExecutionJob.perform_later(execution.id, include_feedback: params[:include_feedback] == "true")
 
     redirect_to project_work_order_path(@project, @work_order), notice: "Agent execution started."
   end

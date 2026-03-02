@@ -415,13 +415,13 @@ Return your findings as JSON:
 ```
 
 **Acceptance Criteria:**
-- [ ] `PrValidationJob` triggers automatically after successful execution
-- [ ] Review checks PR diff against work order acceptance criteria
-- [ ] Review comments posted to GitHub PR / GitLab MR
-- [ ] `FeedbackItem` created in Constitution with review findings
-- [ ] Review distinguishes approve vs request_changes
-- [ ] `spec/jobs/pr_validation_job_spec.rb` passes
-- [ ] `spec/services/mr_review_service_spec.rb` passes
+- [x] `PrValidationJob` triggers automatically after successful execution
+- [x] Review checks PR diff against work order acceptance criteria
+- [x] Review comments posted to GitHub PR / GitLab MR
+- [x] `FeedbackItem` created in Constitution with review findings
+- [x] Review distinguishes approve vs request_changes
+- [x] `spec/jobs/pr_validation_job_spec.rb` passes
+- [x] `spec/services/mr_review_service_spec.rb` passes
 
 ##### 4.2 PR Status Tracking
 
@@ -434,10 +434,10 @@ Return your findings as JSON:
 - `app/views/work_orders/_execution_panel.html.erb` -- show PR status badge
 
 **Acceptance Criteria:**
-- [ ] PR status displayed on work order show page
-- [ ] Status updates automatically via polling job
-- [ ] Notification sent when PR is merged or changes requested
-- [ ] Polling stops when PR is merged or closed
+- [x] PR status displayed on work order show page
+- [x] Status updates automatically via polling job
+- [x] Notification sent when PR is merged or changes requested
+- [x] Polling stops when PR is merged or closed
 
 ##### 4.3 Re-trigger Agent from Review Feedback
 
@@ -458,10 +458,10 @@ Address these issues in your implementation.
 ```
 
 **Acceptance Criteria:**
-- [ ] "Re-run with feedback" button visible when PR has review comments
-- [ ] New execution includes previous review feedback in prompt
-- [ ] Agent addresses review feedback in new implementation
-- [ ] New branch created (no collision with previous)
+- [x] "Re-run with feedback" button visible when PR has review comments
+- [x] New execution includes previous review feedback in prompt
+- [x] Agent addresses review feedback in new implementation
+- [x] New branch created (no collision with previous)
 
 ##### 4.4 Test Execution Integration (Stretch)
 

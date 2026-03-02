@@ -5,8 +5,9 @@ class WorkOrderExecutionJob < ApplicationJob
 
   TIMEOUT = 10.minutes
 
-  def perform(execution_id)
+  def perform(execution_id, include_feedback: false)
     @execution = WorkOrderExecution.find(execution_id)
+    @include_feedback = include_feedback
     @work_order = @execution.work_order
     @project = @work_order.project
 
@@ -23,10 +24,10 @@ class WorkOrderExecutionJob < ApplicationJob
 
     start_execution
 
-    prompt_builder = WorkOrderPromptBuilder.new(work_order: @work_order, repository: nil, execution: @execution)
+    prompt_builder = WorkOrderPromptBuilder.new(work_order: @work_order, repository: nil, execution: @execution, include_feedback: @include_feedback)
     repository = prompt_builder.select_repository(repositories)
 
-    prompt_builder = WorkOrderPromptBuilder.new(work_order: @work_order, repository: repository, execution: @execution)
+    prompt_builder = WorkOrderPromptBuilder.new(work_order: @work_order, repository: repository, execution: @execution, include_feedback: @include_feedback)
     @execution.update!(repository: repository, branch_name: prompt_builder.branch_name)
 
     prompt = prompt_builder.build
@@ -144,6 +145,12 @@ class WorkOrderExecutionJob < ApplicationJob
 
     pr_msg = pr_url ? " PR: #{pr_url}" : ""
     notify_triggered_user("Work order '#{@work_order.title}' completed.#{pr_msg}")
+
+    if pr_url.present?
+      @execution.update!(pr_status: :pr_open)
+      PrValidationJob.perform_later(@execution.id)
+      PrStatusTrackingJob.set(wait: 5.minutes).perform_later
+    end
   end
 
   def fail_execution(message, log: nil)
