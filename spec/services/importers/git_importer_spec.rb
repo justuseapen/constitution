@@ -57,6 +57,45 @@ RSpec.describe Importers::GitImporter do
       expect(repository.service_system).to eq(service_system)
     end
 
+    it "detects github provider from URL" do
+      allow(CodebaseIndexJob).to receive(:perform_later)
+
+      importer = Importers::GitImporter.new(
+        project: project,
+        user: user,
+        url: "https://github.com/example/my-app.git"
+      )
+
+      repository = importer.import!
+      expect(repository.provider).to eq("github")
+    end
+
+    it "detects gitlab provider from URL" do
+      allow(CodebaseIndexJob).to receive(:perform_later)
+
+      importer = Importers::GitImporter.new(
+        project: project,
+        user: user,
+        url: "https://gitlab.com/example/my-app.git"
+      )
+
+      repository = importer.import!
+      expect(repository.provider).to eq("gitlab")
+    end
+
+    it "sets unknown provider for other URLs" do
+      allow(CodebaseIndexJob).to receive(:perform_later)
+
+      importer = Importers::GitImporter.new(
+        project: project,
+        user: user,
+        url: "https://bitbucket.org/example/my-app.git"
+      )
+
+      repository = importer.import!
+      expect(repository.provider).to eq("unknown")
+    end
+
     it "detects default branch via git ls-remote" do
       allow(CodebaseIndexJob).to receive(:perform_later)
       allow(Open3).to receive(:capture2)

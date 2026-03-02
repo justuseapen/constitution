@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_02_144406) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_02_170447) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -226,6 +226,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_02_144406) do
     t.integer "indexing_status", default: 0, null: false
     t.datetime "last_indexed_at"
     t.string "name", null: false
+    t.integer "provider", default: 0, null: false
     t.bigint "service_system_id", null: false
     t.datetime "updated_at", null: false
     t.string "url", null: false

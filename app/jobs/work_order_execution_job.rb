@@ -110,25 +110,15 @@ class WorkOrderExecutionJob < ApplicationJob
   end
 
   def open_pull_request(repository)
-    repo_path = Rails.root.join("tmp", "repos", repository.id.to_s)
     branch = @execution.branch_name
     title = "WO-#{@work_order.id}: #{@work_order.title}"
     body = "Automated implementation for work order ##{@work_order.id}.\n\n**Description:**\n#{@work_order.description}"
 
-    pr_output, status = Open3.capture2e(
-      "gh", "pr", "create",
-      "--title", title,
-      "--body", body,
-      "--head", branch,
-      chdir: repo_path.to_s
-    )
-
-    if status.success?
-      pr_output.strip.lines.last.strip
-    else
-      Rails.logger.warn("Failed to create PR: #{pr_output}")
-      nil
-    end
+    provider = Vcs::ProviderFactory.for(repository)
+    provider.create_merge_request(branch: branch, title: title, body: body)
+  rescue RuntimeError => e
+    Rails.logger.warn("Failed to create PR/MR: #{e.message}")
+    nil
   end
 
   def complete_execution(output, pr_url)

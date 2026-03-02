@@ -38,6 +38,26 @@ RSpec.describe WorkOrderPromptBuilder do
       expect(prompt).to include("<constitution>FAILED:")
     end
 
+    it "includes github VCS instructions for github repos" do
+      repository.update!(provider: :github)
+      builder = described_class.new(work_order: work_order, repository: repository)
+      prompt = builder.build
+
+      expect(prompt).to include("github repository")
+      expect(prompt).to include("`gh`")
+      expect(prompt).to include("Pull Request")
+    end
+
+    it "includes gitlab VCS instructions for gitlab repos" do
+      repository.update!(provider: :gitlab)
+      builder = described_class.new(work_order: work_order, repository: repository)
+      prompt = builder.build
+
+      expect(prompt).to include("gitlab repository")
+      expect(prompt).to include("`glab`")
+      expect(prompt).to include("Merge Request")
+    end
+
     it "includes extracted artifacts when available" do
       file = create(:codebase_file, repository: repository, path: "app/models/user.rb", content: "class User; end")
       create(:extracted_artifact, codebase_file: file, artifact_type: :model, name: "User")

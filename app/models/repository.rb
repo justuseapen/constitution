@@ -4,6 +4,8 @@ class Repository < ApplicationRecord
   belongs_to :service_system
   has_many :codebase_files, dependent: :destroy
 
+  enum :provider, { github: 0, gitlab: 1, unknown: 2 }
+
   validates :name, presence: true
   validates :url, presence: true, uniqueness: { scope: :service_system_id, message: "has already been imported" }
   validate :valid_git_url

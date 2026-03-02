@@ -81,6 +81,9 @@ class WorkOrderPromptBuilder
   end
 
   def instructions_section
+    mr_term = vcs_provider&.merge_request_term || "Pull Request"
+    cli = vcs_provider&.cli_tool || "gh"
+
     <<~INSTRUCTIONS
       ## Instructions
       1. You are working in this repository. It is already cloned and on the default branch.
@@ -91,6 +94,16 @@ class WorkOrderPromptBuilder
       6. Push the branch to origin.
       7. When done, output exactly: <constitution>COMPLETE</constitution>
       8. If you cannot complete the work, output exactly: <constitution>FAILED: {reason}</constitution>
+
+      **VCS:** This is a #{@repository&.provider || "github"} repository. Use `#{cli}` for #{mr_term} operations.
     INSTRUCTIONS
+  end
+
+  def vcs_provider
+    return nil unless @repository&.provider.present? && @repository.provider != "unknown"
+
+    @vcs_provider ||= Vcs::ProviderFactory.for(@repository)
+  rescue RuntimeError
+    nil
   end
 end

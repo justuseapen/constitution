@@ -22,7 +22,8 @@ module Importers
       @service_system.repositories.create!(
         name: name,
         url: @url,
-        default_branch: detect_default_branch
+        default_branch: detect_default_branch,
+        provider: detect_provider
       )
     end
 
@@ -39,6 +40,14 @@ module Importers
 
     def extract_repo_name(url)
       url.split("/").last.sub(/\.git$/, "")
+    end
+
+    def detect_provider
+      case @url
+      when /github\.com/ then :github
+      when /gitlab\.com/ then :gitlab
+      else :unknown
+      end
     end
 
     def detect_default_branch

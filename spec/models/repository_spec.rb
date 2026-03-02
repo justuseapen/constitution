@@ -6,6 +6,7 @@ RSpec.describe Repository, type: :model do
   it { should validate_presence_of(:name) }
   it { should validate_presence_of(:url) }
   it { should define_enum_for(:indexing_status).with_values(pending: 0, indexing: 1, indexed: 2, failed: 3) }
+  it { should define_enum_for(:provider).with_values(github: 0, gitlab: 1, unknown: 2) }
 
   describe "URL validation" do
     let(:service_system) { create(:service_system) }
