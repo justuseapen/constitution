@@ -41,6 +41,8 @@
           <div class="prose max-w-none"><%= simple_format(@work_order.implementation_plan) %></div>
         </div>
       <% end %>
+
+      <%= render "work_orders/execution_panel", work_order: @work_order %>
     </div>
   </div>
 
