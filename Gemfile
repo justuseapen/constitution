@@ -67,7 +67,7 @@ gem "activegraph", "~> 11.4"
 gem "neo4j-ruby-driver", "~> 4.4"
 
 # Authentication
-gem "devise", "~> 4.9"
+gem "devise", "~> 5.0"
 
 # AI
 gem "ruby-openai", "~> 7.0"  # OpenRouter is OpenAI-compatible
