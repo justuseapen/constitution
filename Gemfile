@@ -70,7 +70,7 @@ gem "neo4j-ruby-driver", "~> 4.4"
 gem "devise", "~> 4.9"
 
 # AI
-gem "ruby-openai", "~> 7.0"  # OpenRouter is OpenAI-compatible
+gem "ruby-openai", "~> 8.3"  # OpenRouter is OpenAI-compatible
 
 # Search
 gem "neighbor", "~> 0.4"  # pgvector integration
