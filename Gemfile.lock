@@ -154,7 +154,7 @@ GEM
     factory_bot_rails (6.5.1)
       factory_bot (~> 6.5)
       railties (>= 6.1.0)
-    faker (3.6.0)
+    faker (3.6.1)
       i18n (>= 1.8.11, < 2)
     faraday (2.14.1)
       faraday-net_http (>= 2.0, < 3.5)
@@ -514,7 +514,7 @@ DEPENDENCIES
   docx (~> 0.8)
   dotenv-rails (~> 3.2)
   factory_bot_rails (~> 6.4)
-  faker (~> 3.4)
+  faker (~> 3.6)
   image_processing (~> 1.2)
   jbuilder
   jsbundling-rails
