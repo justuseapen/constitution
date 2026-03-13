@@ -87,7 +87,7 @@ gem "pdf-reader", "~> 2.12"
 
 # Testing
 group :development, :test do
-  gem "rspec-rails", "~> 7.0"
+  gem "rspec-rails", "~> 8.0"
   gem "factory_bot_rails", "~> 6.4"
   gem "faker", "~> 3.4"
   gem "shoulda-matchers", "~> 6.2"
