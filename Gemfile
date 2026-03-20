@@ -95,7 +95,7 @@ end
 
 group :test do
   gem "database_cleaner-active_record", "~> 2.1"
-  gem "webmock", "~> 3.23"
+  gem "webmock", "~> 3.26"
   gem "vcr", "~> 6.2"
 end
 
